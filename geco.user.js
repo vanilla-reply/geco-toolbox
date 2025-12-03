@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Geco 3.23 (2025)
+// @name         Geco-T Booking Modal(2025)
 // @namespace    https://geco.reply.com/
-// @version      3.23
+// @version      3.25
 // @description  Tweaks for our precious Geco
 // @author       sku, fsf, dkr, pna, fro, dor, r.allenstein@reply.de
 // @match        https://geco.reply.com/*
