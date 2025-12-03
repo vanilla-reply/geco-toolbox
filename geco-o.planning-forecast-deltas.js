@@ -1,0 +1,212 @@
+// ==UserScript==
+// @name         Planning Forecast Deltas
+// @namespace    https://geco.reply.com/
+// @version      1.0
+// @description  Show deltas for forecasts
+// @author       Roman Allenstein <r.allenstein@reply.de>
+// @match        https://geco.reply.com/*
+// @match        https://geco.reply.eu/*
+// @run-at       document-idle
+// @grant        none
+// @downloadURL  https://raw.githubusercontent.com/vanilla-reply/geco-toolbox/refs/heads/main/geco-o.planning-forecast-deltas.js
+// @updateURL    https://raw.githubusercontent.com/vanilla-reply/geco-toolbox/refs/heads/main/geco-o.planning-forecast-deltas.js
+// @noframes
+// ==/UserScript==
+// == Changelog ========================================================================================================
+// 1.0      Initial release
+
+(function() {
+    'use strict';
+
+    const DEBUG = false;
+
+    function dbg(...args) {
+        if (DEBUG) console.log('[ForecastDeltas]', ...args);
+    }
+
+    /** Inject styles **/
+    function ensureStyles() {
+        if (document.getElementById('tm-forecast-diff-style')) return;
+
+        const style = document.createElement('style');
+        style.id = 'tm-forecast-diff-style';
+
+        style.textContent = `
+            /* Forecast cells */
+            .forecast.table__subcell.tm-forecast-has-diff {
+                overflow: visible;
+                position: relative;
+            }
+
+            .tm-forecast-diff {
+                float: left;
+                margin-right: 4px;
+                font-size: 1.25em !important;
+                font-weight: bold;
+                white-space: nowrap;
+                display: none; /* Wird nur gezeigt wenn != 0 */
+            }
+
+            /* Footer total delta */
+            .tm-forecast-diff-total {
+                float: left;
+                margin-right: 6px;
+                font-size: 1.25em !important;
+                font-weight: bold;
+                white-space: nowrap;
+                display: none; /* Wird nur gezeigt wenn != 0 */
+            }
+        `;
+
+        document.head.appendChild(style);
+        dbg("Styles injected");
+    }
+
+    /** Parsing helper **/
+    function parseDE(str) {
+        if (!str) return 0;
+        str = str.replace(/\./g, '').replace(',', '.').trim();
+        const n = parseFloat(str);
+        return isNaN(n) ? 0 : n;
+    }
+
+    /** Delta format **/
+    function formatDelta(num) {
+        const sign = num > 0 ? "+" : "";
+        let formatted = Math.abs(num).toFixed(3).replace('.', ',');
+        formatted = formatted.replace(/(\,\d*?)0+$/, "$1").replace(/,$/, ",0");
+        return sign + formatted;
+    }
+
+    /** Init one planning table **/
+    function initPlanningTable(table) {
+        if (table.dataset.tmForecastDone === "1") return;
+        table.dataset.tmForecastDone = "1";
+
+        ensureStyles();
+
+        dbg("Init planning table:", table);
+
+        const inputs = table.querySelectorAll(
+            '.table__body .table__cell[data-month] .forecast input.value'
+        );
+
+        dbg("Forecast inputs:", inputs.length);
+
+        inputs.forEach(input => {
+            if (input.dataset.tmInit) return;
+            input.dataset.tmInit = "1";
+
+            const base = input.getAttribute("data-init-value") || input.value || "0";
+            input.dataset.tmBase = base;
+
+            const container = input.parentElement;
+            container.classList.add("tm-forecast-has-diff");
+
+            let diffSpan = container.querySelector(".tm-forecast-diff");
+            if (!diffSpan) {
+                diffSpan = document.createElement("span");
+                diffSpan.className = "tm-forecast-diff";
+                container.insertBefore(diffSpan, input);
+            }
+
+            const handler = () => updateCellDelta(input, table);
+            input.addEventListener("input", handler);
+            input.addEventListener("change", handler);
+
+            updateCellDelta(input, table);
+        });
+
+        updateAllTotals(table);
+    }
+
+    /** Update a single cell **/
+    function updateCellDelta(input, table) {
+        const base = parseDE(input.dataset.tmBase || "0");
+        const curr = parseDE(input.value);
+        const delta = curr - base;
+
+        dbg("Delta cell:", input, "=", delta);
+
+        const span = input.parentElement.querySelector(".tm-forecast-diff");
+        if (!span) return;
+
+        if (Math.abs(delta) < 1e-9) {
+            span.style.display = "none";
+        } else {
+            span.textContent = formatDelta(delta);
+            span.style.color = delta > 0 ? "#008800" : "#bb0000";
+            span.style.display = "inline";
+        }
+
+        const cell = input.closest('.table__cell[data-month]');
+        if (cell) {
+            updateColumnTotal(table, cell.getAttribute("data-month"));
+        }
+    }
+
+    /** Update total for one month **/
+    function updateColumnTotal(table, month) {
+        const inputs = table.querySelectorAll(
+            `.table__body .table__cell[data-month="${month}"] .forecast input.value`
+        );
+
+        let total = 0;
+        inputs.forEach(inp => {
+            const base = parseDE(inp.dataset.tmBase || "0");
+            const curr = parseDE(inp.value);
+            total += (curr - base);
+        });
+
+        dbg(`Month ${month} total delta =`, total);
+
+        const footerForecast = table.querySelector(
+            `.table__foot .table__row--totals .table__cell[data-month="${month}"] .forecast`
+        );
+        if (!footerForecast) return;
+
+        let span = footerForecast.querySelector('.tm-forecast-diff-total');
+        if (!span) {
+            span = document.createElement("span");
+            span.className = "tm-forecast-diff-total";
+            footerForecast.insertBefore(span, footerForecast.querySelector(".value"));
+        }
+
+        if (Math.abs(total) < 1e-9) {
+            span.style.display = "none";
+        } else {
+            span.textContent = formatDelta(total);
+            span.style.color = total > 0 ? "#008800" : "#bb0000";
+            span.style.display = "inline";
+        }
+    }
+
+    function updateAllTotals(table) {
+        const months = table.querySelectorAll(
+            '.table__foot .table__row--totals .table__cell[data-month]'
+        );
+
+        months.forEach(cell => {
+            updateColumnTotal(table, cell.getAttribute("data-month"));
+        });
+    }
+
+    /** Initialization watcher **/
+    function tryInit() {
+        const tables = document.querySelectorAll('.table.table--planning.table--scrolling');
+        if (!tables.length) return false;
+
+        tables.forEach(initPlanningTable);
+        return true;
+    }
+
+    if (!tryInit()) {
+        const observer = new MutationObserver(tryInit);
+        observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true
+        });
+
+        window.addEventListener("hashchange", () => setTimeout(tryInit, 200));
+    }
+})();
