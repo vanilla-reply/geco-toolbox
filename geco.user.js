@@ -6,8 +6,8 @@
 // @author       sku, fsf, dkr, pna, fro, dor, r.allenstein@reply.de
 // @match        https://geco.reply.com/*
 // @match        https://geco.reply.eu/*
-// @downloadURL  https://gitlab.vanilla.space/vanilla-tools/tampermonkey-geco-helper/-/blob/main/geco.user.js
-// @updateURL    https://gitlab.vanilla.space/vanilla-tools/tampermonkey-geco-helper/-/blob/main/geco.user.js
+// @downloadURL  https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco.user.js
+// @updateURL    https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco.user.js
 // @grant        none
 // @noframes
 // ==/UserScript==
