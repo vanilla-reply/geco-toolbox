@@ -8,8 +8,8 @@
 // @match        https://geco.reply.eu/*
 // @run-at       document-idle
 // @grant        none
-// @downloadURL  https://raw.githubusercontent.com/vanilla-reply/geco-toolbox/refs/heads/main/geco-o.planning-forecast-deltas.js
-// @updateURL    https://raw.githubusercontent.com/vanilla-reply/geco-toolbox/refs/heads/main/geco-o.planning-forecast-deltas.js
+// @downloadURL  https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-forecast-deltas.user.js
+// @updateURL    https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-forecast-deltas.user.js
 // @noframes
 // ==/UserScript==
 // == Changelog ========================================================================================================
