@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Geco 3.23 (2025)
 // @namespace    https://geco.reply.com/
-// @version      1.0
+// @version      3.23
 // @description  Tweaks for our precious Geco
-// @author       sku, fsf, dkr, pna, fro, dor
+// @author       sku, fsf, dkr, pna, fro, dor, r.allenstein@reply.de
 // @match        https://geco.reply.com/*
 // @match        https://geco.reply.eu/*
 // @downloadURL  https://gitlab.vanilla.space/vanilla-tools/tampermonkey-geco-helper/-/blob/main/geco.user.js
