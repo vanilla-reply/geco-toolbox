@@ -1,17 +1,17 @@
 // ==UserScript==
 // @name         Team - Sort by Alphabet
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      1.1.1
 // @description  Adjusts the numbering of table rows by the first word of the last name before saving the form
 // @author       Roman Allenstein <r.allenstein@reply.de>
-// @match        https://geco.reply.com/*
-// @match        https://geco.reply.eu/*
+// @match        https://geco.reply.com/GeCoO/Project/ManageTeam.aspx?sc=*
 // @grant        none
 // @downloadURL  https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team-sort.user.js
 // @updateURL    https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team-sort.user.js
 // @run-at       document-end
 // ==/UserScript==
 // == Changelog ========================================================================================================
+// 1.1.1    Fix match-url
 // 1.1      Fix match-url
 // 1.0      Initial release
 
