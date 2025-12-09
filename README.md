@@ -17,7 +17,8 @@ Klicke auf einen der folgenden Links, um das Skript direkt zu installieren:
 
 - [GECO-T Booking Modal](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco.user.js)
 - [Planning Forecast Deltas](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-forecast-deltas.user.js)
-- [Team Sort](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team-sort.user.js)
+- [Team - Sort](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team-sort.user.js)
+- [Team - Toggle Costs](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team.toggle-costs.user.js)
 
 ## Skripte
 
@@ -59,6 +60,14 @@ Sortiert Teammitglieder im Tab "Team" alphabetisch nach Nachnamen, wenn man das 
 - **Manueller Button:** "Sort by Alphabet" Button zum manuellen Sortieren
 - **Automatische Sortierung:** Sortiert automatisch vor dem Speichern des Formulars
 - **Nachnamensbasiert:** Sortierung erfolgt nach dem ersten Wort des Namens
+
+---
+
+### GECO-O Team Toggle Costs
+
+**Datei:** `geco-o.team.toggle-costs.user.js`
+
+Fügt einen Button hinzu, um die Sichtbarkeit der Kosten zu steuern
 
 ---
 
