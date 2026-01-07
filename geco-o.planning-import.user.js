@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         Planning Table – Import Planning Data (CSV + Urlaubstool-Konverter via Personalnummer=data-user-id)
 // @namespace    https://tampermonkey.net/
-// @version      2.5.0
+// @version      2.5.1
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @description  Paste semicolon CSV. Supports direct format Personalnummer;Januar;...;Dezember. Also converts Urlaubstool CSV (Personalnummer;Vorname;Nachname;...;Von;Bis;...;Art;Anzahl der Arbeitstage). Matching is done by Personalnummer == data-user-id. Splits across months by WORKDAYS (Mon–Fri, German national public holidays, 24.12. & 31.12. count as 50%). Empty cells => 0. Shows overlay with users missing import data AND Urlaubstool rows without Personalnummer.
-// @match        *://*/*
+// @match        https://geco.reply.com/GeCoO/Project/ManagePlanning.aspx?*
 // @run-at       document-end
 // @downloadURL  https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-import.user.js
 // @updateURL    https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-import.user.js
@@ -63,7 +63,7 @@
 
   // Date helpers (UTC)
   const ymd = d => `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`;
-  const addDays = (d, n) => { const nd = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + n)); return nd; };
+  const addDays = (d, n) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + n));
   const parseDE = s => { const m = (s||"").match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/); return m ? new Date(Date.UTC(+m[3], +m[2]-1, +m[1])) : null; };
 
   function easterSunday(year) {
