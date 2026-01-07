@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Planning Table – Row & Column Highlight on Hover
 // @namespace    http://tampermonkey.net/
-// @version      2.0.0
-// @description  Highlights the entire row and month column when hovering over any cell in the planning table
+// @version      2.1.0
+// @description  Highlights the entire row and month header when hovering over any cell in the planning table
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/GeCoO/Project/ManagePlanning.aspx?*
 // @grant        none
@@ -15,8 +15,7 @@
   "use strict";
 
   const ROW_COLOR = "rgba(255, 235, 59, 0.25)";
-  const COL_COLOR = "rgba(66, 165, 245, 0.20)";
-  const CROSS_COLOR = "rgba(76, 175, 80, 0.35)";
+  const HEADER_COLOR = "rgba(66, 165, 245, 0.30)";
 
   // Inject styles
   const style = document.createElement("style");
@@ -29,11 +28,8 @@
     .table--planning .tbody.table__row.tm-row-highlight .table__cell {
       background-color: ${ROW_COLOR} !important;
     }
-    .table--planning .table__cell.tm-col-highlight {
-      background-color: ${COL_COLOR} !important;
-    }
-    .table--planning .tm-row-highlight .table__cell.tm-col-highlight {
-      background-color: ${CROSS_COLOR} !important;
+    .table--planning .month.table__head .table__cell.tm-col-highlight {
+      background-color: ${HEADER_COLOR} !important;
     }
   `;
   document.head.appendChild(style);
@@ -46,7 +42,7 @@
 
   function highlightMonth(month, highlight) {
     if (!month) return;
-    document.querySelectorAll(`.table--planning .table__cell[data-month="${CSS.escape(month)}"]`)
+    document.querySelectorAll(`.table--planning .month.table__row.table__head .table__cell[data-month="${CSS.escape(month)}"]`)
       .forEach(cell => cell.classList.toggle("tm-col-highlight", highlight));
   }
 
