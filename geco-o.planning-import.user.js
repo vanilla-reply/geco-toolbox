@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Planning Table – Import Planning Data (CSV + Urlaubstool-Konverter via Personalnummer=data-user-id)
 // @namespace    https://tampermonkey.net/
-// @version      2.5.3
+// @version      2.8.0
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @description  Paste semicolon CSV. Supports direct format Personalnummer;Januar;...;Dezember. Also converts Urlaubstool CSV (Personalnummer;Vorname;Nachname;...;Von;Bis;...;Art;Anzahl der Arbeitstage). Matching is done by Personalnummer == data-user-id. Splits across months by WORKDAYS (Mon–Fri, German national public holidays, 24.12. & 31.12. count as 50%). Empty cells => 0. Shows overlay with users missing import data AND Urlaubstool rows without Personalnummer.
 // @match        https://geco.reply.com/GeCoO/Project/ManagePlanning.aspx?*
@@ -161,6 +161,18 @@
     return { converted: out.join("\n"), missing };
   }
 
+  function convertExcelToCSV(text) {
+    const lines = (text || "").replace(/\r\n?/g, "\n").split("\n").map(l => l.trim()).filter(Boolean);
+    if (!lines.length) return "";
+    // Detect delimiter: tab or multiple spaces
+    const delim = lines[0].includes("\t") ? "\t" : /\s{2,}/.test(lines[0]) ? /\s{2,}/ : "\t";
+    return lines.map(line => {
+      const parts = line.split(delim).map(p => p.trim());
+      // Convert decimal points to commas for numbers
+      return parts.map(p => /^-?\d+\.?\d*$/.test(p) ? p.replace(".", ",") : p).join(";");
+    }).join("\n");
+  }
+
   // DOM interaction
   async function waitForReady(timeout = 15000) {
     const t0 = Date.now();
@@ -176,11 +188,52 @@
   }
 
   function getDomUsers() {
-    return [...document.querySelectorAll('.table--planning.table--fixed .tbody.table__row[data-user-id]')].map(r => ({
+    return [...document.querySelectorAll('.table--planning.table--fixed .tbody.table__row[data-user-id][data-is-active="1"]')].map(r => ({
       userId: r.getAttribute("data-user-id"),
       name: r.querySelector(".user-name")?.textContent?.trim() || "",
       nameKey: norm(r.querySelector(".user-name")?.textContent || "")
     }));
+  }
+
+  function exportTableAsCSV() {
+    const rows = [];
+    const fixedRows = document.querySelectorAll('.table--planning.table--fixed .tbody.table__row[data-user-id][data-is-active="1"]');
+    const scrollingBody = document.querySelector('.table--planning.table--scrolling .table__body');
+
+    for (const fixedRow of fixedRows) {
+      const userId = fixedRow.getAttribute("data-user-id");
+      const fullName = fixedRow.querySelector(".user-name")?.textContent?.trim() || "";
+
+      // Parse name: Format is "LASTNAME Firstname" or "LASTNAME Firstname Middlename"
+      const nameParts = fullName.split(/\s+/);
+      let nachname = "", vorname = "";
+      if (nameParts.length >= 2) {
+        // First part is uppercase lastname, rest is firstname
+        nachname = nameParts[0];
+        vorname = nameParts.slice(1).join(" ");
+      } else {
+        nachname = fullName;
+      }
+
+      // Get month values from scrolling table
+      const scrollingRow = scrollingBody?.querySelector(`.table__row[data-user-id="${CSS.escape(userId)}"]`);
+      const monthValues = [];
+      for (let m = 1; m <= 12; m++) {
+        const cell = scrollingRow?.querySelector(`.table__cell[data-month="${m}"]`);
+        // For month 1, check forecast subcell first, then direct input
+        const input = m === 1
+          ? (cell?.querySelector(".forecast input.value") || cell?.querySelector("input.value"))
+          : cell?.querySelector("input.value");
+        const div = cell?.querySelector("div.value");
+        const val = input?.value || div?.textContent?.trim() || "0,0";
+        monthValues.push(val);
+      }
+
+      rows.push([userId, ...monthValues, vorname, nachname].join(";"));
+    }
+
+    const header = ["Personalnummer", ...MONTHS_DE, "Vorname", "Nachname"].join(";");
+    return [header, ...rows].join("\n");
   }
 
   function fillRow(userId, vals) {
@@ -240,13 +293,23 @@
     const textarea = el("textarea", {placeholder: "Personalnummer;Januar;...;Dezember\noder Urlaubstool-Export einfügen"});
 
     const header = el("div", {class: "tm-row between", style: "margin-bottom:10px"});
-    header.append(el("h3", {text: "Import Planning Data"}), el("div", {html: "<small>Format: <b>Personalnummer;Januar;...;Dezember</b></small>"}));
+    header.append(el("h3", {text: "Import Planning Data"}), el("div", {html: "<small>Format: <b>Personalnummer;Januar;...;Dezember[;Vorname;Nachname]</b></small>"}));
 
     const btnRow = el("div", {class: "tm-row between", style: "margin-top:12px"});
-    const convertBtn = el("button", {class: "btn--default btn--light", text: "Daten aus Urlaubstool konvertieren"});
+    const exportBtn = el("button", {class: "btn--default btn--light", text: "Tabelle exportieren"});
+    const excelBtn = el("button", {class: "btn--default btn--light", text: "Excel \u2192 CSV"});
+    const convertBtn = el("button", {class: "btn--default btn--light", text: "Urlaubstool \u2192 CSV"});
     const cancelBtn = el("button", {class: "btn--default btn--light", text: "Abbrechen"});
     const importBtn = el("button", {class: "btn--default btn--light", text: "Import starten"});
 
+    exportBtn.onclick = () => {
+      textarea.value = exportTableAsCSV();
+    };
+    excelBtn.onclick = () => {
+      const csv = convertExcelToCSV(textarea.value);
+      if (!csv) { alert("Keine Daten gefunden"); return; }
+      textarea.value = csv;
+    };
     convertBtn.onclick = () => {
       const res = convertUrlaubstool(textarea.value);
       if (!res.converted) { alert("Konvertierung fehlgeschlagen"); return; }
@@ -271,7 +334,7 @@
       showResult({ missingUsers, unknownInCsv, missingPnr });
     };
 
-    btnRow.append(el("div", {class: "tm-row"}, [convertBtn]), el("div", {class: "tm-row"}, [cancelBtn, importBtn]));
+    btnRow.append(el("div", {class: "tm-row"}, [exportBtn, excelBtn, convertBtn]), el("div", {class: "tm-row"}, [cancelBtn, importBtn]));
     panel.append(header, textarea, btnRow);
     overlay.appendChild(panel);
     overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
