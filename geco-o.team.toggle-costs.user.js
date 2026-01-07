@@ -1,103 +1,82 @@
 // ==UserScript==
 // @name         Team - Show/Hide Costs
 // @namespace    http://tampermonkey.net/
-// @version      1.0.0
+// @version      2.0.0
 // @description  Toggle visibility of cost columns on team page and remember setting in a cookie
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/GeCoO/Project/ManageTeam.aspx?sc=*
 // @grant        none
-// @downloadURL  https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team.toggle-costs.user.js
-// @updateURL    https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team-toggle-costs.user.js
 // @run-at       document-end
+// @downloadURL  https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team.toggle-costs.user.js
+// @updateURL    https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team.toggle-costs.user.js
 // ==/UserScript==
-// == Changelog ========================================================================================================
-// 1.0.0         Initial release
 
 (function () {
-    'use strict';
+  "use strict";
 
-    const COOKIE_NAME = 'tm_team_show_costs';
-    const COOKIE_DAYS = 365;
+  const BTN_ID = "tm-btn-toggle-costs";
+  const COOKIE_NAME = "tm_team_show_costs";
+  const COOKIE_DAYS = 365;
 
-    function setCookie(name, value, days) {
-        const date = new Date();
-        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-        const expires = '; expires=' + date.toUTCString();
-        document.cookie = name + '=' + encodeURIComponent(value) + expires + '; path=/';
-    }
+  /* =============================================
+     REUSABLE HELPERS - copy to other scripts
+     ============================================= */
+  const el = (tag, attrs = {}, children = []) => {
+    const e = document.createElement(tag);
+    Object.entries(attrs).forEach(([k, v]) => k === "text" ? e.textContent = v : k === "html" ? e.innerHTML = v : e.setAttribute(k, v));
+    children.forEach(c => e.appendChild(typeof c === "string" ? document.createTextNode(c) : c));
+    return e;
+  };
 
-    function getCookie(name) {
-        const nameEQ = name + '=';
-        const ca = document.cookie.split(';');
-        for (let i = 0; i < ca.length; i++) {
-            let c = ca[i];
-            while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-            if (c.indexOf(nameEQ) === 0) {
-                return decodeURIComponent(c.substring(nameEQ.length, c.length));
-            }
-        }
-        return null;
-    }
+  const addButtonAfter = (selector, btnAttrs, onClick) => {
+    const anchor = document.querySelector(selector);
+    if (!anchor || document.getElementById(btnAttrs.id)) return null;
+    const btn = el("button", btnAttrs);
+    if (onClick) btn.addEventListener("click", onClick);
+    anchor.insertAdjacentElement("afterend", btn);
+    return btn;
+  };
+  /* ============================================= */
 
-    function ensureCustomOptionsContainer() {
-        let container = document.getElementById('tampermonkey-custom-options');
-        if (container) return container;
+  const setCookie = (name, val, days) => {
+    const d = new Date(); d.setTime(d.getTime() + days * 864e5);
+    document.cookie = `${name}=${encodeURIComponent(val)}; expires=${d.toUTCString()}; path=/`;
+  };
 
-        const h2 = document.querySelector('h2');
-        if (!h2) return null;
+  const getCookie = name => {
+    const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+    return m ? decodeURIComponent(m[1]) : null;
+  };
 
-        container = document.createElement('div');
-        container.id = 'tampermonkey-custom-options';
-        container.style.margin = '10px 0';
-        container.style.display = 'flex';
-        container.style.gap = '10px';
+  let showCosts = getCookie(COOKIE_NAME) !== "0";
 
-        h2.insertAdjacentElement('afterend', container);
-        return container;
-    }
+  function updateVisibility() {
+    document.querySelectorAll(".real-cost-view, .avg-cost-view, #plhAvgCpstHeader, #plhRealCostHeader")
+      .forEach(el => el.style.display = showCosts ? "" : "none");
+  }
 
-    function updateCostsVisibility(show) {
-        const cells = document.querySelectorAll('.real-cost-view, .avg-cost-view');
-        const headers = document.querySelectorAll('#plhAvgCpstHeader, #plhRealCostHeader');
+  function toggle() {
+    showCosts = !showCosts;
+    updateVisibility();
+    setCookie(COOKIE_NAME, showCosts ? "1" : "0", COOKIE_DAYS);
+    const btn = document.getElementById(BTN_ID);
+    if (btn) btn.textContent = showCosts ? "Hide Costs" : "Show Costs";
+  }
 
-        [...cells, ...headers].forEach(el => {
-            el.style.display = show ? '' : 'none';
-        });
-    }
+  // Init
+  const BTN_SELECTOR = "h2";
 
-    function setButtonLabel(button, show) {
-        button.textContent = show ? 'Hide' : 'Show';
-    }
+  const init = () => {
+    const btn = addButtonAfter(BTN_SELECTOR, {
+      id: BTN_ID,
+      type: "button",
+      class: "btn--default btn--light",
+      style: "margin: 10px 10px 10px 0",
+      text: showCosts ? "Hide Costs" : "Show Costs"
+    }, toggle);
+    if (btn) updateVisibility();
+  };
 
-    function initShowHideButton(initialShow) {
-        const container = ensureCustomOptionsContainer();
-        if (!container) return;
-
-        if (container.querySelector('#tm-btn-show-hide-costs')) return;
-
-        let showCosts = initialShow;
-
-        const button = document.createElement('button');
-        button.id = 'tm-btn-show-hide-costs';
-        button.type = 'button';
-        setButtonLabel(button, showCosts);
-
-        button.addEventListener('click', () => {
-            showCosts = !showCosts;
-            updateCostsVisibility(showCosts);
-            setCookie(COOKIE_NAME, showCosts ? '1' : '0', COOKIE_DAYS);
-            setButtonLabel(button, showCosts);
-        });
-
-        container.appendChild(button);
-        updateCostsVisibility(showCosts);
-    }
-
-    function init() {
-        const cookieVal = getCookie(COOKIE_NAME);
-        const showCosts = cookieVal === null ? true : (cookieVal === '1');
-        initShowHideButton(showCosts);
-    }
-
-    window.addEventListener('load', init);
+  window.addEventListener("load", init);
+  new MutationObserver(init).observe(document.documentElement, {childList: true, subtree: true});
 })();

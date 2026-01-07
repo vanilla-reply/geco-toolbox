@@ -71,7 +71,7 @@
 
   // Init
   const BTN_SELECTOR = "h2";
-  const BTN_ATTRS = {id: BTN_ID, type: "button", class: "btn--default btn--light", text: "Sort by Alphabet"};
+  const BTN_ATTRS = {id: BTN_ID, type: "button", class: "btn--default btn--light", style: "margin: 10px 10px 10px 0", text: "Sort by Alphabet"};
 
   const init = () => {
     addButtonAfter(BTN_SELECTOR, BTN_ATTRS, e => { e.preventDefault(); adjustSortingByAlphabet(); });
