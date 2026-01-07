@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Planning Table – Import Planning Data (CSV + Urlaubstool-Konverter via Personalnummer=data-user-id)
 // @namespace    https://tampermonkey.net/
-// @version      2.5.1
+// @version      2.5.2
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @description  Paste semicolon CSV. Supports direct format Personalnummer;Januar;...;Dezember. Also converts Urlaubstool CSV (Personalnummer;Vorname;Nachname;...;Von;Bis;...;Art;Anzahl der Arbeitstage). Matching is done by Personalnummer == data-user-id. Splits across months by WORKDAYS (Mon–Fri, German national public holidays, 24.12. & 31.12. count as 50%). Empty cells => 0. Shows overlay with users missing import data AND Urlaubstool rows without Personalnummer.
 // @match        https://geco.reply.com/GeCoO/Project/ManagePlanning.aspx?*
@@ -189,7 +189,8 @@
     for (let m = 1; m <= 12; m++) {
       const cell = row.querySelector(`.table__cell[data-month="${m}"]`);
       const input = m === 1 ? (cell?.querySelector(".forecast input.value") || cell?.querySelector("input.value")) : cell?.querySelector("input.value");
-      if (input && !input.disabled) {
+      // Skip past months that are no longer editable (disabled or readonly)
+      if (input && !input.disabled && !input.readOnly) {
         const v = formatEU(vals[m-1] ?? 0);
         input.value = v; input.setAttribute("data-prev-value", v);
         ["input","change","blur"].forEach(e => input.dispatchEvent(new Event(e, {bubbles:true})));
