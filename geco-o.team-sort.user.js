@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Team - Sort by Alphabet
 // @namespace    http://tampermonkey.net/
-// @version      2.0.0
+// @version      2.0.1
 // @description  Adjusts the numbering of table rows by the first word of the last name before saving the form
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/GeCoO/Project/ManageTeam.aspx?sc=*
