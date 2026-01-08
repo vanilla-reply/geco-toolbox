@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Planning Table – Row & Column Highlight on Hover
 // @namespace    http://tampermonkey.net/
-// @version      2.1.0
+// @version      2.1.1
 // @description  Highlights the entire row and month header when hovering over any cell in the planning table
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/GeCoO/Project/ManagePlanning.aspx?*
@@ -48,6 +48,8 @@
 
   // Event delegation for hover
   document.addEventListener("mouseenter", e => {
+    if (!e.target.closest) return; // Skip non-Element targets (text nodes, etc.)
+
     const cell = e.target.closest(".table--planning .table__cell[data-month]");
     if (cell) highlightMonth(cell.getAttribute("data-month"), true);
 
@@ -56,6 +58,8 @@
   }, true);
 
   document.addEventListener("mouseleave", e => {
+    if (!e.target.closest) return; // Skip non-Element targets (text nodes, etc.)
+
     const cell = e.target.closest(".table--planning .table__cell[data-month]");
     if (cell) highlightMonth(cell.getAttribute("data-month"), false);
 
