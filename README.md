@@ -17,6 +17,8 @@ Klicke auf einen der folgenden Links, um das Skript direkt zu installieren:
 
 - [GECO-T Booking Modal](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco.user.js)
 - [Planning Forecast Deltas](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-forecast-deltas.user.js)
+- [Planning Import](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-import.user.js)
+- [Planning Row Highlight](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-row-highlight.user.js)
 - [Team - Sort](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team-sort.user.js)
 - [Team - Toggle Costs](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team.toggle-costs.user.js)
 
@@ -51,6 +53,36 @@ Zeigt Änderungen (Deltas) in Forecast-Werten an:
 
 ---
 
+### GECO-O Planning Import
+
+**Datei:** `geco-o.planning-import.user.js`
+
+Import-Tool für Planungsdaten mit mehreren Datenquellen:
+
+- **CSV-Import:** Direkt-Import im Format `Personalnummer;Januar;...;Dezember`
+- **Urlaubstool-Konverter:** Konvertiert Urlaubstool-Exporte automatisch in das Import-Format
+  - Berücksichtigt deutsche Feiertage (inkl. Osterfeiertage)
+  - 24.12. und 31.12. zählen als halbe Arbeitstage
+  - Verteilt Urlaubstage korrekt auf Monate
+- **Excel-Import:** Konvertiert Tab-separierte Excel-Daten zu CSV
+- **Tabellen-Export:** Exportiert aktuelle Planungsdaten als CSV (mit Vorname/Nachname)
+- **Matching:** Abgleich über Personalnummer (`data-user-id`)
+- **Fehlerreport:** Zeigt fehlende User und nicht gefundene CSV-Einträge
+
+---
+
+### GECO-O Planning Row Highlight
+
+**Datei:** `geco-o.planning-row-highlight.user.js`
+
+Visuelle Hilfe für die Planungstabelle:
+
+- **Zeilen-Highlight:** Hebt die gesamte Zeile (User) beim Hover gelb hervor
+- **Header-Highlight:** Hebt den Monatskopf der aktuellen Spalte blau hervor
+- **Synchronisiert:** Funktioniert über beide Tabellenhälften (fixe + scrollbare Spalten)
+
+---
+
 ### GECO-O Team Sort
 
 **Datei:** `geco-o.team-sort.user.js`
@@ -67,7 +99,10 @@ Sortiert Teammitglieder im Tab "Team" alphabetisch nach Nachnamen, wenn man das 
 
 **Datei:** `geco-o.team.toggle-costs.user.js`
 
-Fügt einen Button hinzu, um die Sichtbarkeit der Kosten zu steuern
+Fügt einen Button hinzu, um die Sichtbarkeit der Kostenspalten zu steuern:
+
+- **Toggle-Button:** "Show Costs" / "Hide Costs" zum Ein-/Ausblenden
+- **Persistenz:** Einstellung wird im Cookie gespeichert (365 Tage)
 
 ---
 
