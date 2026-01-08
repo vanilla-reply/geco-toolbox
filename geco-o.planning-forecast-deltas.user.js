@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Planning Forecast Deltas
 // @namespace    https://geco.reply.com/
-// @version      2.0.0
+// @version      2.0.1
 // @description  Show deltas for forecasts
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/*
@@ -19,7 +19,7 @@
 (function() {
     'use strict';
 
-    const DEBUG = false;
+    const DEBUG = true;
 
     function dbg(...args) {
         if (DEBUG) console.log('[ForecastDeltas]', ...args);
@@ -94,7 +94,12 @@
             '.table__body .table__cell[data-month] input.value[data-init-value]'
         );
 
-        dbg("Forecast inputs:", inputs.length);
+        dbg("Forecast inputs found:", inputs.length);
+        if (!inputs.length) {
+            dbg("Alt check - all inputs in table:", table.querySelectorAll('input').length);
+            dbg("Alt check - input.value:", table.querySelectorAll('input.value').length);
+            dbg("Alt check - [data-init-value]:", table.querySelectorAll('[data-init-value]').length);
+        }
 
         inputs.forEach(input => {
             if (input.dataset.tmInit) return;
@@ -204,7 +209,13 @@
     /** Initialization watcher **/
     function tryInit() {
         const tables = document.querySelectorAll('.table.table--planning.table--scrolling');
-        if (!tables.length) return false;
+        dbg("tryInit - tables found:", tables.length);
+        if (!tables.length) {
+            // Try alternative selectors for debugging
+            dbg("Alt check - .table--planning:", document.querySelectorAll('.table--planning').length);
+            dbg("Alt check - .table--scrolling:", document.querySelectorAll('.table--scrolling').length);
+            return false;
+        }
 
         tables.forEach(initPlanningTable);
         return true;
