@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Planning Forecast Deltas
 // @namespace    https://geco.reply.com/
-// @version      2.0.1
+// @version      2.1.0
 // @description  Show deltas for forecasts
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/*
@@ -10,9 +10,9 @@
 // @grant        none
 // @downloadURL  https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-forecast-deltas.user.js
 // @updateURL    https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-forecast-deltas.user.js
-// @noframes
 // ==/UserScript==
 // == Changelog ========================================================================================================
+// 2.1.0    Remove @noframes to run inside iframes (SPA version)
 // 2.0.0    Fix selectors to work with both .forecast wrapped and direct inputs in month cells
 // 1.0      Initial release
 
