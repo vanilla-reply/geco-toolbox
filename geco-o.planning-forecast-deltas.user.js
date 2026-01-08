@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Planning Forecast Deltas
 // @namespace    https://geco.reply.com/
-// @version      1.0
+// @version      2.0.0
 // @description  Show deltas for forecasts
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/*
@@ -13,6 +13,7 @@
 // @noframes
 // ==/UserScript==
 // == Changelog ========================================================================================================
+// 2.0.0    Fix selectors to work with both .forecast wrapped and direct inputs in month cells
 // 1.0      Initial release
 
 (function() {
@@ -32,7 +33,8 @@
         style.id = 'tm-forecast-diff-style';
 
         style.textContent = `
-            /* Forecast cells */
+            /* Cells with deltas */
+            .table__cell.tm-forecast-has-diff,
             .forecast.table__subcell.tm-forecast-has-diff {
                 overflow: visible;
                 position: relative;
@@ -74,7 +76,7 @@
     function formatDelta(num) {
         const sign = num > 0 ? "+" : "";
         let formatted = Math.abs(num).toFixed(3).replace('.', ',');
-        formatted = formatted.replace(/(\,\d*?)0+$/, "$1").replace(/,$/, ",0");
+        formatted = formatted.replace(/(,\d*?)0+$/, "$1").replace(/,$/, ",0");
         return sign + formatted;
     }
 
@@ -87,8 +89,9 @@
 
         dbg("Init planning table:", table);
 
+        // Find ALL inputs with data-init-value in month cells (both .forecast wrapped and direct)
         const inputs = table.querySelectorAll(
-            '.table__body .table__cell[data-month] .forecast input.value'
+            '.table__body .table__cell[data-month] input.value[data-init-value]'
         );
 
         dbg("Forecast inputs:", inputs.length);
@@ -97,10 +100,10 @@
             if (input.dataset.tmInit) return;
             input.dataset.tmInit = "1";
 
-            const base = input.getAttribute("data-init-value") || input.value || "0";
-            input.dataset.tmBase = base;
+            input.dataset.tmBase = input.getAttribute("data-init-value") || input.value || "0";
 
-            const container = input.parentElement;
+            // Container can be .forecast subcell or .table__cell directly
+            const container = input.closest('.forecast') || input.closest('.table__cell');
             container.classList.add("tm-forecast-has-diff");
 
             let diffSpan = container.querySelector(".tm-forecast-diff");
@@ -128,7 +131,8 @@
 
         dbg("Delta cell:", input, "=", delta);
 
-        const span = input.parentElement.querySelector(".tm-forecast-diff");
+        const container = input.closest('.forecast') || input.closest('.table__cell');
+        const span = container?.querySelector(".tm-forecast-diff");
         if (!span) return;
 
         if (Math.abs(delta) < 1e-9) {
@@ -147,8 +151,9 @@
 
     /** Update total for one month **/
     function updateColumnTotal(table, month) {
+        // Find all inputs with init values in this month (both .forecast wrapped and direct)
         const inputs = table.querySelectorAll(
-            `.table__body .table__cell[data-month="${month}"] .forecast input.value`
+            `.table__body .table__cell[data-month="${month}"] input.value[data-init-value]`
         );
 
         let total = 0;
@@ -160,16 +165,21 @@
 
         dbg(`Month ${month} total delta =`, total);
 
-        const footerForecast = table.querySelector(
-            `.table__foot .table__row--totals .table__cell[data-month="${month}"] .forecast`
+        // Footer cell can have .forecast subcell or contain .value directly
+        const footerCell = table.querySelector(
+            `.table__foot .table__row--totals .table__cell[data-month="${month}"]`
         );
-        if (!footerForecast) return;
+        if (!footerCell) return;
 
-        let span = footerForecast.querySelector('.tm-forecast-diff-total');
+        const footerContainer = footerCell.querySelector('.forecast') || footerCell;
+        const valueEl = footerContainer.querySelector(".value");
+        if (!valueEl) return;
+
+        let span = footerContainer.querySelector('.tm-forecast-diff-total');
         if (!span) {
             span = document.createElement("span");
             span.className = "tm-forecast-diff-total";
-            footerForecast.insertBefore(span, footerForecast.querySelector(".value"));
+            footerContainer.insertBefore(span, valueEl);
         }
 
         if (Math.abs(total) < 1e-9) {
