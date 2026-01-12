@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Planning Forecast Deltas
 // @namespace    https://geco.reply.com/
-// @version      2.2.0
+// @version      2.2.1
 // @description  Show deltas for forecasts
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/*
@@ -12,6 +12,7 @@
 // @updateURL    https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-forecast-deltas.user.js
 // ==/UserScript==
 // == Changelog ========================================================================================================
+// 2.2.1    Fix Font size
 // 2.2.0    Fix layout shift by using absolute positioning for delta overlays
 // 2.1.0    Remove @noframes to run inside iframes (SPA version)
 // 2.0.0    Fix selectors to work with both .forecast wrapped and direct inputs in month cells
@@ -43,10 +44,10 @@
 
             .tm-forecast-diff {
                 position: absolute;
-                left: 2px;
+                left: 10px;
                 top: 50%;
                 transform: translateY(-50%);
-                font-size: 0.85em !important;
+                font-size: 1em !important;
                 font-weight: bold;
                 white-space: nowrap;
                 display: none; /* Wird nur gezeigt wenn != 0 */
@@ -58,10 +59,10 @@
             /* Footer total delta */
             .tm-forecast-diff-total {
                 position: absolute;
-                left: 2px;
+                left: 10px;
                 top: 50%;
                 transform: translateY(-50%);
-                font-size: 0.85em !important;
+                font-size: 1em !important;
                 font-weight: bold;
                 white-space: nowrap;
                 display: none; /* Wird nur gezeigt wenn != 0 */
