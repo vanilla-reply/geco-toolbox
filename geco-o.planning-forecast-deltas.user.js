@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Planning Forecast Deltas
 // @namespace    https://geco.reply.com/
-// @version      2.1.0
+// @version      2.2.0
 // @description  Show deltas for forecasts
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/*
@@ -12,6 +12,7 @@
 // @updateURL    https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-forecast-deltas.user.js
 // ==/UserScript==
 // == Changelog ========================================================================================================
+// 2.2.0    Fix layout shift by using absolute positioning for delta overlays
 // 2.1.0    Remove @noframes to run inside iframes (SPA version)
 // 2.0.0    Fix selectors to work with both .forecast wrapped and direct inputs in month cells
 // 1.0      Initial release
@@ -41,22 +42,32 @@
             }
 
             .tm-forecast-diff {
-                float: left;
-                margin-right: 4px;
-                font-size: 1.25em !important;
+                position: absolute;
+                left: 2px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 0.85em !important;
                 font-weight: bold;
                 white-space: nowrap;
                 display: none; /* Wird nur gezeigt wenn != 0 */
+                pointer-events: none;
+                z-index: 1;
+                text-shadow: 0 0 2px white, 0 0 2px white, 0 0 2px white;
             }
 
             /* Footer total delta */
             .tm-forecast-diff-total {
-                float: left;
-                margin-right: 6px;
-                font-size: 1.25em !important;
+                position: absolute;
+                left: 2px;
+                top: 50%;
+                transform: translateY(-50%);
+                font-size: 0.85em !important;
                 font-weight: bold;
                 white-space: nowrap;
                 display: none; /* Wird nur gezeigt wenn != 0 */
+                pointer-events: none;
+                z-index: 1;
+                text-shadow: 0 0 2px white, 0 0 2px white, 0 0 2px white;
             }
         `;
 
