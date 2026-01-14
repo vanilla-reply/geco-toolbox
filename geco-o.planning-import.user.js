@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Planning Table – Import Planning Data (CSV + Urlaubstool-Konverter via Personalnummer=data-user-id)
+// @name         GECO-O - Planning Table – Import Planning Data (CSV + Urlaubstool-Konverter via Personalnummer=data-user-id)
 // @namespace    https://tampermonkey.net/
-// @version      2.8.0
+// @version      2.8.1
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @description  Paste semicolon CSV. Supports direct format Personalnummer;Januar;...;Dezember. Also converts Urlaubstool CSV (Personalnummer;Vorname;Nachname;...;Von;Bis;...;Art;Anzahl der Arbeitstage). Matching is done by Personalnummer == data-user-id. Splits across months by WORKDAYS (Mon–Fri, German national public holidays, 24.12. & 31.12. count as 50%). Empty cells => 0. Shows overlay with users missing import data AND Urlaubstool rows without Personalnummer.
 // @match        https://geco.reply.com/GeCoO/Project/ManagePlanning.aspx?*

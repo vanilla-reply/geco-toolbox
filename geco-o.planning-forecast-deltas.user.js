@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Planning Forecast Deltas
+// @name         GECO-O - Planning Forecast Deltas
 // @namespace    https://geco.reply.com/
-// @version      2.2.1
+// @version      2.2.2
 // @description  Show deltas for forecasts
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/*

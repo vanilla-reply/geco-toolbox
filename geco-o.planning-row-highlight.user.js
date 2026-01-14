@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Planning Table – Row & Column Highlight on Hover
+// @name         GECO-O - Planning Table – Row & Column Highlight on Hover
 // @namespace    http://tampermonkey.net/
-// @version      2.1.1
+// @version      2.1.2
 // @description  Highlights the entire row and month header when hovering over any cell in the planning table
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/GeCoO/Project/ManagePlanning.aspx?*

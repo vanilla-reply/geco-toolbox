@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Team - Show/Hide Costs
+// @name         GECO-O - Team - Show/Hide Costs
 // @namespace    http://tampermonkey.net/
-// @version      2.0.0
+// @version      2.0.1
 // @description  Toggle visibility of cost columns on team page and remember setting in a cookie
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/GeCoO/Project/ManageTeam.aspx?sc=*
