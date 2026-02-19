@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GECO-O - Planning Forecast Deltas
 // @namespace    https://geco.reply.com/
-// @version      2.2.2
+// @version      2.2.3
 // @description  Show deltas for forecasts
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/*
@@ -12,16 +12,18 @@
 // @updateURL    https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-forecast-deltas.user.js
 // ==/UserScript==
 // == Changelog ========================================================================================================
-// 2.2.1    Fix Font size
-// 2.2.0    Fix layout shift by using absolute positioning for delta overlays
-// 2.1.0    Remove @noframes to run inside iframes (SPA version)
-// 2.0.0    Fix selectors to work with both .forecast wrapped and direct inputs in month cells
 // 1.0      Initial release
+// 2.0.0    Fix selectors to work with both .forecast wrapped and direct inputs in month cells
+// 2.1.0    Remove @noframes to run inside iframes (SPA version)
+// 2.2.0    Fix layout shift by using absolute positioning for delta overlays
+// 2.2.1    Fix Font size
+// 2.2.2    Fix delta formatting
+// 2.2.3    Fix delta formatting for negative values
 
 (function() {
     'use strict';
 
-    const DEBUG = true;
+    const DEBUG = false;
 
     function dbg(...args) {
         if (DEBUG) console.log('[ForecastDeltas]', ...args);
