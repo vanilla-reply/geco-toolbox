@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GECO2CPO Webhook
 // @namespace    https://geco.reply.com/
-// @version      1.0
+// @version      1.0.1
 // @description  Sync changes to CPO
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/*
@@ -14,12 +14,14 @@
 // ==/UserScript==
 // == Changelog ========================================================================================================
 // 1.0      Initial release
+// 1.0.1    Added CPO_BASE and WEBHOOK_URL constants for easier configuration
 
 (function () {
     'use strict';
 
     const DEBUG = false; // ← auf false setzen für "silent mode"
-    const WEBHOOK_URL = 'http://localhost:8080/webhook/sync-planning'; // https://cpo.lab.roman-allenstein.de/webhook/sync-planning
+    const CPO_BASE = DEBUG ? 'http://localhost:8080' : 'https://cpo.lab.roman-allenstein.de';
+    const WEBHOOK_URL = `${CPO_BASE}/webhook/sync-planning`;
 
     function log(...args) {
         if (DEBUG) console.log('[GECO2CPO]', ...args);
