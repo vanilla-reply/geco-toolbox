@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         GECO2CPO Webhook
 // @namespace    https://geco.reply.com/
-// @version      1.2.0
+// @version      1.2.1
 // @description  Sync changes to CPO
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/
+// @match        https://geco.reply.com/GeCoO/Project/ManagePlanning.aspx*
 // @run-at       document-start
 // @grant        GM_xmlhttpRequest
 // @connect      localhost
@@ -19,6 +20,7 @@
 // 1.1.1    Downgrade missing project ID warning to log on timesheet pages
 // 1.1.2    Restrict @match to root URL to avoid loading on RefreshSession pages
 // 1.2.0    Replace DOM btn-save handler with XHR interceptor for SavePlanning_1_0
+// 1.2.1    Add @match for ManagePlanning.aspx iframe so XHR interceptor runs there
 
 (function () {
     'use strict';
