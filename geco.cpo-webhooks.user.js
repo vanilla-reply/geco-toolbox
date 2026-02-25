@@ -10,8 +10,8 @@
 // @grant        GM_xmlhttpRequest
 // @connect      localhost
 // @connect      cpo.lab.roman-allenstein.de
-// @downloadURL  https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.cpo-webhooks.user.js
-// @updateURL    https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.cpo-webhooks.user.js
+// @downloadURL  https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco.cpo-webhooks.user.js
+// @updateURL    https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco.cpo-webhooks.user.js
 // ==/UserScript==
 // == Changelog ========================================================================================================
 // 1.0      Initial release

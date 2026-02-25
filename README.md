@@ -21,6 +21,7 @@ Klicke auf einen der folgenden Links, um das Skript direkt zu installieren:
 - [Planning Row Highlight](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-row-highlight.user.js)
 - [Team - Sort](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team-sort.user.js)
 - [Team - Toggle Costs](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team.toggle-costs.user.js)
+- [GECO2CPO Webhook](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco.cpo-webhooks.user.js)
 
 ## Skripte
 
@@ -103,6 +104,19 @@ Fügt einen Button hinzu, um die Sichtbarkeit der Kostenspalten zu steuern:
 
 - **Toggle-Button:** "Show Costs" / "Hide Costs" zum Ein-/Ausblenden
 - **Persistenz:** Einstellung wird im Cookie gespeichert (365 Tage)
+
+---
+
+### GECO2CPO Webhook
+
+**Datei:** `geco.cpo-webhooks.user.js`
+
+Synchronisiert Änderungen aus GECO automatisch an CPO per Webhook:
+
+- **Planning-Sync:** Beim Speichern der Planung (`SavePlanning_1_0`) wird die `ProjectSubId` aus dem Request-Payload extrahiert und an `/webhook/sync-planning` gesendet
+- **Timesheet-Sync:** Beim Speichern des Timesheets (`SaveProjectTimesheet_1_1`) werden `userId`, `year` und `month` an `/webhook/sync-timesheet` gesendet
+- **XHR-Interceptor:** Beide Webhooks werden zuverlässig über XHR-Interception ausgelöst
+- **Debug-Modus:** Über `DEBUG = true` können alle Interceptor- und Webhook-Aktivitäten in der Konsole nachverfolgt werden
 
 ---
 
