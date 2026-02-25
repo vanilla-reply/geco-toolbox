@@ -1,5 +1,9 @@
 # GECO Toolbox
 
+<p align="center">
+  <img src="cover.svg" alt="GECO Toolbox" width="400">
+</p>
+
 Eine Sammlung von Tampermonkey-Skripten zur Erweiterung und Verbesserung der GECO-Webanwendung.
 
 ## Installation
@@ -12,16 +16,15 @@ Eine Sammlung von Tampermonkey-Skripten zur Erweiterung und Verbesserung der GEC
     - [Edge](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd)
     - [Safari](https://apps.apple.com/app/tampermonkey/id1482490089)
 
-### Skript installieren
-Klicke auf einen der folgenden Links, um das Skript direkt zu installieren:
+### Skripte
 
-- [GECO-T Booking Modal](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco.user.js)
-- [Planning Forecast Deltas](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-forecast-deltas.user.js)
-- [Planning Import](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-import.user.js)
-- [Planning Row Highlight](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-row-highlight.user.js)
-- [Team - Sort](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team-sort.user.js)
-- [Team - Toggle Costs](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team.toggle-costs.user.js)
-- [GECO2CPO Webhook](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco.cpo-webhooks.user.js)
+- [GECO-T Booking Modal](#geco-t-booking-modal)
+- [GECO-O Planning Forecast Deltas](#geco-o-planning-forecast-deltas)
+- [GECO-O Planning Import](#geco-o-planning-import)
+- [GECO-O Planning Row Highlight](#geco-o-planning-row-highlight)
+- [GECO-O Team Sort](#geco-o-team-sort)
+- [GECO-O Team Toggle Costs](#geco-o-team-toggle-costs)
+- [GECO2CPO Webhook](#geco2cpo-webhook)
 
 ## Skripte
 
@@ -39,6 +42,8 @@ Erweitert das Zeiterfassungs-Interface von GECO-T mit folgenden Features:
 
 Das Skript kann über eine Checkbox aktiviert/deaktiviert werden, die in der GECO-Oberfläche erscheint.
 
+[Skript installieren](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco.user.js)
+
 ---
 
 ### GECO-O Planning Forecast Deltas
@@ -51,6 +56,8 @@ Zeigt Änderungen (Deltas) in Forecast-Werten an:
 - **Farbcodierung:** Positive Änderungen in Grün, negative in Rot
 - **Summen-Deltas:** Gesamtänderung pro Monat in der Fußzeile
 - **Live-Updates:** Deltas werden bei jeder Eingabe sofort aktualisiert
+
+[Skript installieren](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-forecast-deltas.user.js)
 
 ---
 
@@ -70,6 +77,8 @@ Import-Tool für Planungsdaten mit mehreren Datenquellen:
 - **Matching:** Abgleich über Personalnummer (`data-user-id`)
 - **Fehlerreport:** Zeigt fehlende User und nicht gefundene CSV-Einträge
 
+[Skript installieren](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-import.user.js)
+
 ---
 
 ### GECO-O Planning Row Highlight
@@ -81,6 +90,8 @@ Visuelle Hilfe für die Planungstabelle:
 - **Zeilen-Highlight:** Hebt die gesamte Zeile (User) beim Hover gelb hervor
 - **Header-Highlight:** Hebt den Monatskopf der aktuellen Spalte blau hervor
 - **Synchronisiert:** Funktioniert über beide Tabellenhälften (fixe + scrollbare Spalten)
+
+[Skript installieren](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.planning-row-highlight.user.js)
 
 ---
 
@@ -94,6 +105,8 @@ Sortiert Teammitglieder im Tab "Team" alphabetisch nach Nachnamen, wenn man das 
 - **Automatische Sortierung:** Sortiert automatisch vor dem Speichern des Formulars
 - **Nachnamensbasiert:** Sortierung erfolgt nach dem ersten Wort des Namens
 
+[Skript installieren](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team-sort.user.js)
+
 ---
 
 ### GECO-O Team Toggle Costs
@@ -104,6 +117,8 @@ Fügt einen Button hinzu, um die Sichtbarkeit der Kostenspalten zu steuern:
 
 - **Toggle-Button:** "Show Costs" / "Hide Costs" zum Ein-/Ausblenden
 - **Persistenz:** Einstellung wird im Cookie gespeichert (365 Tage)
+
+[Skript installieren](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team.toggle-costs.user.js)
 
 ---
 
@@ -117,6 +132,8 @@ Synchronisiert Änderungen aus GECO automatisch an CPO per Webhook:
 - **Timesheet-Sync:** Beim Speichern des Timesheets (`SaveProjectTimesheet_1_1`) werden `userId`, `year` und `month` an `/webhook/sync-timesheet` gesendet
 - **XHR-Interceptor:** Beide Webhooks werden zuverlässig über XHR-Interception ausgelöst
 - **Debug-Modus:** Über `DEBUG = true` können alle Interceptor- und Webhook-Aktivitäten in der Konsole nachverfolgt werden
+
+[Skript installieren](https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco.cpo-webhooks.user.js)
 
 ---
 

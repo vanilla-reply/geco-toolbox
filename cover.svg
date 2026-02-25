@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 400" width="800" height="400">
+  <!-- Transparent background -->
+
+  <!-- Emojis -->
+  <text x="320" y="200" font-size="160" text-anchor="middle" dominant-baseline="central">🦎</text>
+  <text x="480" y="190" font-size="110" text-anchor="middle" dominant-baseline="central">🛠️</text>
+
+  <!-- Title -->
+  <text x="400" y="320" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="48" font-weight="700" text-anchor="middle" fill="#24292f" letter-spacing="4">
+    GECO TOOLBOX
+  </text>
+
+  <!-- Subtle line -->
+  <line x1="280" y1="340" x2="520" y2="340" stroke="#24292f" stroke-width="1.5" opacity="0.2"/>
+
+  <!-- Tagline -->
+  <text x="400" y="370" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="15" font-weight="400" text-anchor="middle" fill="#656d76" letter-spacing="3">
+    FIX IT LIKE A PRO
+  </text>
+</svg>
