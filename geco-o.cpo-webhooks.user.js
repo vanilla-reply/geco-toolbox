@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         GECO2CPO Webhook
 // @namespace    https://geco.reply.com/
-// @version      1.1.1
+// @version      1.1.2
 // @description  Sync changes to CPO
 // @author       Roman Allenstein <r.allenstein@reply.de>
-// @match        https://geco.reply.com/*
+// @match        https://geco.reply.com/
 // @run-at       document-start
 // @grant        GM_xmlhttpRequest
 // @connect      localhost
@@ -17,6 +17,7 @@
 // 1.0.1    Added CPO_BASE and WEBHOOK_URL constants for easier configuration
 // 1.1.0    Add timesheet webhook (sync-timesheet), refactor postWebhook to generic endpoint+payload
 // 1.1.1    Downgrade missing project ID warning to log on timesheet pages
+// 1.1.2    Restrict @match to root URL to avoid loading on RefreshSession pages
 
 (function () {
     'use strict';
