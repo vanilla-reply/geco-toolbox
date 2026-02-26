@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         GECO2CPO Webhook
 // @namespace    https://geco.reply.com/
-// @version      1.2.1
+// @version      1.3.0
 // @description  Sync changes to CPO
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/
 // @match        https://geco.reply.com/GeCoO/Project/ManagePlanning.aspx*
+// @match        https://geco.reply.com/GeCoO/Project/ProjectSub.aspx*
 // @run-at       document-start
 // @grant        GM_xmlhttpRequest
 // @connect      localhost
@@ -21,6 +22,7 @@
 // 1.1.2    Restrict @match to root URL to avoid loading on RefreshSession pages
 // 1.2.0    Replace DOM btn-save handler with XHR interceptor for SavePlanning_1_0
 // 1.2.1    Add @match for ManagePlanning.aspx iframe so XHR interceptor runs there
+// 1.3.0    Add budget webhook (sync-budget) via form submit listener on ProjectSub.aspx
 
 (function () {
     'use strict';
@@ -30,6 +32,7 @@
     const ENDPOINTS = {
         syncPlanning:  '/webhook/sync-planning',
         syncTimesheet: '/webhook/sync-timesheet',
+        syncBudget:    '/webhook/sync-budget',
     };
 
     function log(...args) {
@@ -45,6 +48,36 @@
     }
 
     log('userscript loaded on', location.href);
+
+    // --- Budget sync (postMessage from iframe → parent fires webhook) ---
+    if (location.pathname.includes('ProjectSub.aspx')) {
+        // IFRAME: detect save click and notify parent via postMessage
+        const params = new URLSearchParams(location.search);
+        const referenceId = params.get('sc');
+        if (referenceId) {
+            document.addEventListener('DOMContentLoaded', () => {
+                const btn = document.getElementById('btnSave');
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        log('ProjectSub.aspx btnSave click → postMessage to parent', { referenceId });
+                        window.parent.postMessage({ type: 'geco2cpo-budget', referenceId }, '*');
+                    }, true);
+                } else {
+                    warn('ProjectSub.aspx: btnSave not found');
+                }
+            });
+        } else {
+            warn('ProjectSub.aspx: missing sc parameter in URL');
+        }
+    } else if (location.pathname === '/') {
+        // PARENT: receive message from iframe and fire webhook
+        window.addEventListener('message', (e) => {
+            if (e.data?.type === 'geco2cpo-budget' && e.data.referenceId) {
+                log('received geco2cpo-budget message from iframe', e.data);
+                postWebhook(ENDPOINTS.syncBudget, { referenceId: e.data.referenceId });
+            }
+        });
+    }
 
     // --- XHR interceptor ---
     const origOpen = XMLHttpRequest.prototype.open;
