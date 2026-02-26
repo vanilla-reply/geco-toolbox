@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(md5:*)"
-    ],
-    "deny": [],
-    "ask": []
-  }
-}
