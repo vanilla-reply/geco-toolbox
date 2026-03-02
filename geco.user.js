@@ -236,6 +236,7 @@ var GecoExtension = {
         //this._addConfirmSelectedButton();
         //this._addConfirmTableFilter();
         this._highlightCurrentDay();
+        this._fillDayTimes();
         // add class for body
         $('body').addClass('geco-fe-enabled');
         var self = this;
@@ -579,6 +580,85 @@ var GecoExtension = {
         this.$editbox.find('#notes-to-add').val($.trim(t));
         this.$editbox.find('#hours-to-add').val(hoursSum > 0 ? self._formatTime(hoursSum) : '');
         this.$editbox.find('#office-to-add').val( this.$editbox.find('#office-to-add').val() != '' ? this.$editbox.find('#office-to-add').val() : 2);
+        // refresh day start/end times
+        setTimeout(function() { self._fillDayTimes(); }, 200);
+    },
+    // ---------------------------------------------------------------------------------------------------------------
+    // function: auto-fill day start (always 08:30) and day end (08:30 + booked hours + 30min break)
+    // ---------------------------------------------------------------------------------------------------------------
+    _fillDayTimes: function() {
+        function toHHMM(totalMinutes) {
+            var h = Math.floor(totalMinutes / 60);
+            var m = totalMinutes % 60;
+            return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+        }
+
+        function parseHours(val) {
+            if (!val) return 0;
+            var n = parseFloat(String(val).replace(',', '.'));
+            return isNaN(n) ? 0 : n;
+        }
+
+        var DAY_START = 8 * 60 + 30; // 08:30 in minutes
+        var BREAK = 30;              // 30 min break
+
+        // Build map: day number -> column index in the hours table
+        var dayToColIndex = {};
+        $('.table--days .table__cell').each(function(i) {
+            var day = parseInt($(this).find('b').text(), 10);
+            if (!isNaN(day)) {
+                dayToColIndex[day] = i + 1; // nth-child is 1-based
+            }
+        });
+
+        $('input[id^="dayStartTime"]').each(function() {
+            var $startInput = $(this);
+            var day = parseInt($startInput.data('day'), 10);
+            if (!day) return;
+
+            var isHoliday = $startInput.data('holiday') === true || $startInput.data('holiday') === 'true';
+            if (isHoliday) return;
+
+            var $endInput = $('#dayEndTime' + day);
+
+            // Always set start to 08:30 if empty
+            if (!$startInput.val()) {
+                $startInput.val(toHHMM(DAY_START));
+                $startInput.trigger('input');
+            }
+
+            // Sum hours for this day column across all activity rows in .table--hours
+            var colIdx = dayToColIndex[day];
+            if (!colIdx) return;
+
+            var totalHours = 0;
+            $('.table--hours .table__row').each(function() {
+                var $cell = $(this).find('.table__cell:nth-child(' + colIdx + ')');
+                if (!$cell.length) return;
+
+                // Try open editbox first
+                var $hoursInput = $cell.find('#hours-to-add');
+                if ($hoursInput.length) {
+                    totalHours += parseHours($hoursInput.val());
+                    return;
+                }
+                // Read displayed value from closed cell
+                var text = $cell.find('b').first().text().trim();
+                if (!text) text = $cell.find('span').first().text().trim();
+                if (!text) text = $cell.clone().children().remove().end().text().trim();
+                var h = parseHours(text);
+                if (h > 0) totalHours += h;
+            });
+
+            if (totalHours > 0) {
+                var endMin = DAY_START + Math.round(totalHours * 60) + BREAK;
+                var newEnd = toHHMM(endMin);
+                if ($endInput.val() !== newEnd) {
+                    $endInput.val(newEnd);
+                    $endInput.trigger('input');
+                }
+            }
+        });
     }
 };
 //GecoExtension.run();
