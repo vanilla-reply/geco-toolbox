@@ -584,7 +584,7 @@ var GecoExtension = {
         setTimeout(function() { self._fillDayTimes(); }, 200);
     },
     // ---------------------------------------------------------------------------------------------------------------
-    // function: auto-fill day start (always 08:30) and day end (08:30 + booked hours + 30min break)
+    // function: auto-fill day start (always 08:30) and day end (08:30 + booked hours + 45min break)
     // ---------------------------------------------------------------------------------------------------------------
     _fillDayTimes: function() {
         function toHHMM(totalMinutes) {
@@ -600,7 +600,7 @@ var GecoExtension = {
         }
 
         var DAY_START = 8 * 60 + 30; // 08:30 in minutes
-        var BREAK = 30;              // 30 min break
+        var BREAK = 45;              // 45 min break
 
         // Build map: day number -> column index in the hours table
         var dayToColIndex = {};
