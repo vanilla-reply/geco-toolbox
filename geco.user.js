@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geco-T Booking Modal(2025)
 // @namespace    https://geco.reply.com/
-// @version      3.25
+// @version      3.26
 // @description  Tweaks for our precious Geco
 // @author       sku, fsf, dkr, pna, fro, dor, r.allenstein@reply.de
 // @match        https://geco.reply.com/*
@@ -236,7 +236,7 @@ var GecoExtension = {
         //this._addConfirmSelectedButton();
         //this._addConfirmTableFilter();
         this._highlightCurrentDay();
-        this._fillDayTimes();
+        this._initDayStartTimes();
         // add class for body
         $('body').addClass('geco-fe-enabled');
         var self = this;
@@ -555,6 +555,14 @@ var GecoExtension = {
         var t = '',
             hoursSum = 0,
             self = this;
+
+        // Capture the open day NOW before anything can close the cell
+        var openDay = NaN;
+        var $openCell = $('.table--hours .table__cell.openend-cell');
+        if ($openCell.length) {
+            openDay = parseInt($openCell.data('day'), 10);
+        }
+
         if (!this.$editbox.length) {
             console.log('no editbox found!');
             return;
@@ -580,11 +588,36 @@ var GecoExtension = {
         this.$editbox.find('#notes-to-add').val($.trim(t));
         this.$editbox.find('#hours-to-add').val(hoursSum > 0 ? self._formatTime(hoursSum) : '');
         this.$editbox.find('#office-to-add').val( this.$editbox.find('#office-to-add').val() != '' ? this.$editbox.find('#office-to-add').val() : 2);
+
+        // Store full day total: sum of all OTHER activity cells for this day + current editbox hours
+        if (!isNaN(openDay)) {
+            if (!GecoExtension._dayHours) GecoExtension._dayHours = {};
+            var dayTotal = hoursSum;
+            $('.table--hours .table__cell[data-day="' + openDay + '"]').not($openCell).each(function() {
+                var h = parseFloat($(this).data('hours-saved'));
+                if (!isNaN(h) && h > 0) dayTotal += h;
+            });
+            GecoExtension._dayHours[openDay] = dayTotal;
+        }
+
         // refresh day start/end times
         setTimeout(function() { self._fillDayTimes(); }, 200);
     },
     // ---------------------------------------------------------------------------------------------------------------
-    // function: auto-fill day start (always 08:30) and day end (08:30 + booked hours + 45min break)
+    // function: on load, set 08:30 for any non-holiday day that has no start time yet
+    // ---------------------------------------------------------------------------------------------------------------
+    _initDayStartTimes: function() {
+        $('input[id^="dayStartTime"]').each(function() {
+            var $input = $(this);
+            var isHoliday = $input.data('holiday') === true || $input.data('holiday') === 'true';
+            if (isHoliday || $input.val()) return;
+            $input.val('08:30');
+            $input.trigger('change');
+            $input.trigger('focusout');
+        });
+    },
+    // ---------------------------------------------------------------------------------------------------------------
+    // function: auto-fill day end time (08:30 + booked hours + 45 min break) when hours change
     // ---------------------------------------------------------------------------------------------------------------
     _fillDayTimes: function() {
         function toHHMM(totalMinutes) {
@@ -593,25 +626,10 @@ var GecoExtension = {
             return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
         }
 
-        function parseHours(val) {
-            if (!val) return 0;
-            var n = parseFloat(String(val).replace(',', '.'));
-            return isNaN(n) ? 0 : n;
-        }
+        var DAY_START = 8 * 60 + 30;
+        var BREAK = 45;
 
-        var DAY_START = 8 * 60 + 30; // 08:30 in minutes
-        var BREAK = 45;              // 45 min break
-
-        // Build map: day number -> column index in the hours table
-        var dayToColIndex = {};
-        $('.table--days .table__cell').each(function(i) {
-            var day = parseInt($(this).find('b').text(), 10);
-            if (!isNaN(day)) {
-                dayToColIndex[day] = i + 1; // nth-child is 1-based
-            }
-        });
-
-        $('input[id^="dayStartTime"]').each(function() {
+        if (!GecoExtension._dayHours) GecoExtension._dayHours = {};        $('input[id^="dayStartTime"]').each(function() {
             var $startInput = $(this);
             var day = parseInt($startInput.data('day'), 10);
             if (!day) return;
@@ -619,43 +637,16 @@ var GecoExtension = {
             var isHoliday = $startInput.data('holiday') === true || $startInput.data('holiday') === 'true';
             if (isHoliday) return;
 
-            var $endInput = $('#dayEndTime' + day);
-
-            // Always set start to 08:30 if empty
-            if (!$startInput.val()) {
-                $startInput.val(toHHMM(DAY_START));
-                $startInput.trigger('input');
-            }
-
-            // Sum hours for this day column across all activity rows in .table--hours
-            var colIdx = dayToColIndex[day];
-            if (!colIdx) return;
-
-            var totalHours = 0;
-            $('.table--hours .table__row').each(function() {
-                var $cell = $(this).find('.table__cell:nth-child(' + colIdx + ')');
-                if (!$cell.length) return;
-
-                // Try open editbox first
-                var $hoursInput = $cell.find('#hours-to-add');
-                if ($hoursInput.length) {
-                    totalHours += parseHours($hoursInput.val());
-                    return;
-                }
-                // Read displayed value from closed cell
-                var text = $cell.find('b').first().text().trim();
-                if (!text) text = $cell.find('span').first().text().trim();
-                if (!text) text = $cell.clone().children().remove().end().text().trim();
-                var h = parseHours(text);
-                if (h > 0) totalHours += h;
-            });
-
+            // Set end time if we have stored hours for this day
+            var totalHours = GecoExtension._dayHours[day];
             if (totalHours > 0) {
+                var $endInput = $('#dayEndTime' + day);
                 var endMin = DAY_START + Math.round(totalHours * 60) + BREAK;
                 var newEnd = toHHMM(endMin);
                 if ($endInput.val() !== newEnd) {
                     $endInput.val(newEnd);
-                    $endInput.trigger('input');
+                    $endInput.trigger('change');
+                    $endInput.trigger('focusout');
                 }
             }
         });
