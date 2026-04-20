@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geco-T Booking Modal(2025)
 // @namespace    https://geco.reply.com/
-// @version      3.26
+// @version      3.27
 // @description  Tweaks for our precious Geco
 // @author       sku, fsf, dkr, pna, fro, dor, r.allenstein@reply.de
 // @match        https://geco.reply.com/*
@@ -641,8 +641,9 @@ var GecoExtension = {
             var totalHours = GecoExtension._dayHours[day];
             if (totalHours > 0) {
                 var $endInput = $('#dayEndTime' + day);
-                var endMin = DAY_START + Math.round(totalHours * 60) + BREAK;
-                var newEnd = toHHMM(endMin);
+                // var endMin = DAY_START + Math.round(totalHours * 60) + BREAK; --commented out because of too many bugs. Replaced with fixed end time
+                // var newEnd = toHHMM(endMin); --commented out because of too many bugs. Replaced with fixed end time
+                var newEnd = '17:30';
                 if ($endInput.val() !== newEnd) {
                     $endInput.val(newEnd);
                     $endInput.trigger('change');
