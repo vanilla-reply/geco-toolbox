@@ -299,6 +299,7 @@ var GecoExtension = {
             'The booked hours are read from the daily summary.' +
             '</div>' +
 
+            '<div class="geco-fe-break-rule-settings"' + (GecoConfig.isFixedEndTimeEnabled() ? ' style="display:none;"' : '') + '>' +
             '<label>Break rule</label>' +
 
             '<label class="geco-fe-settings-radio">' +
@@ -311,6 +312,7 @@ var GecoExtension = {
 
             '<label for="geco-fe-break-minutes">Fixed break duration in minutes</label>' +
             '<input type="number" id="geco-fe-break-minutes" name="breakMinutes" value="' + GecoConfig.getBreakMinutes() + '" min="0" step="1" />' +
+            '</div>' +
 
             '<div class="geco-fe-settings-actions">' +
             '<button type="button" class="btn-flat geco-fe-settings-reset">Reset</button>' +
@@ -326,6 +328,9 @@ var GecoExtension = {
         $dialog.on('click.geco', '.geco-fe-settings-cancel', $.proxy(this._closeSettingsDialog, this));
         $dialog.on('click.geco', '.geco-fe-settings-save', $.proxy(this._saveSettingsDialog, this));
         $dialog.on('click.geco', '.geco-fe-settings-reset', $.proxy(this._resetSettingsDialog, this));
+        $dialog.on('change.geco', 'input[name="enableFixedEndTime"]', function() {
+            $dialog.find('.geco-fe-break-rule-settings').toggle(!$(this).is(':checked'));
+        });
     },
 
     _closeSettingsDialog: function() {
