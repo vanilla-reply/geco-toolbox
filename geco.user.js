@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geco-T Booking Modal(2025)
 // @namespace    https://geco.reply.com/
-// @version      3.28
+// @version      3.29
 // @description  Tweaks for our precious Geco
 // @author       sku, fsf, dkr, pna, fro, dor, r.allenstein@reply.de
 // @match        https://geco.reply.com/*
@@ -656,6 +656,16 @@ var GecoExtension = {
 
         if (val != filteredVal) {
             $this.val(filteredVal);
+        }
+
+        if ($this.hasClass('task')) {
+            var ticketMatch = filteredVal.match(/^([A-Za-z]+-\d+)\s+(.*)$/);
+            var $ticket = $this.closest('.task-extension').find('input.ticket');
+
+            if (ticketMatch && $ticket.val() === '') {
+                $ticket.val(ticketMatch[1]);
+                $this.val(ticketMatch[2]);
+            }
         }
 
         if (e && e.which == 13) {
