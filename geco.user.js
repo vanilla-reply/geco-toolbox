@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geco-T Booking Modal(2025)
 // @namespace    https://geco.reply.com/
-// @version      3.29
+// @version      3.30
 // @description  Tweaks for our precious Geco
 // @author       sku, fsf, dkr, pna, fro, dor, r.allenstein@reply.de
 // @match        https://geco.reply.com/*
@@ -267,7 +267,7 @@ var GecoExtension = {
         $chkbox.insertBefore('.page__content .tables-wrap .timesheet-action');
         $chkbox.wrap('<div class="geco-fe-checkbox-container"></div>');
         $chkbox.after('<label for="geco-extension">Enable <strong class="geco">ge<span>co</span></strong> frontend extension (v' + this.options.version + ')</label>');
-        $chkbox.closest('.geco-fe-checkbox-container').append('<button type="button" class="geco-fe-settings-button" title="GECO Toolbox Einstellungen">⚙</button>');
+        $chkbox.closest('.geco-fe-checkbox-container').append('<button type="button" class="geco-fe-settings-button" title="GECO Toolbox settings">⚙</button>');
         $chkbox.closest('.geco-fe-checkbox-container').on('click.geco', '.geco-fe-settings-button', $.proxy(this._openSettingsDialog, this));
     },
 
@@ -342,22 +342,22 @@ var GecoExtension = {
         var breakMinutes = $dialog.find('input[name="breakMinutes"]').val();
 
         if (!this._isValidTime($dialog.find('input[name="dayStartTime"]').val())) {
-            alert('Bitte eine gültige Startzeit im Format HH:MM eingeben, z. B. 08:30.');
+            alert('Please enter a valid start time in HH:MM format, e.g. 08:30.');
             return;
         }
 
         if (!this._isValidTime($dialog.find('input[name="dayEndTime"]').val())) {
-            alert('Bitte eine gültige Endzeit im Format HH:MM eingeben, z. B. 17:30.');
+            alert('Please enter a valid end time in HH:MM format, e.g. 17:30.');
             return;
         }
 
         if (!breakMinutes.match(/^\d+$/)) {
-            alert('Bitte eine gültige Pausenzeit in Minuten eingeben, z. B. 45.');
+            alert('Please enter a valid break duration in minutes, e.g. 45.');
             return;
         }
 
         if (!$dialog.find('input[name="breakMode"]:checked').length) {
-            alert('Bitte eine Pausenregel auswählen.');
+            alert('Please select a break rule.');
             return;
         }
 
@@ -664,7 +664,7 @@ var GecoExtension = {
         }
 
         if ($this.hasClass('task')) {
-            var ticketMatch = filteredVal.match(/^([A-Za-z]+-\d+)\s+(.*)$/);
+            var ticketMatch = filteredVal.match(/^([A-Za-z][A-Za-z0-9]*-\d+)\s+(.*)$/);
             var $ticket = $this.closest('.task-extension').find('input.ticket');
 
             if (ticketMatch && $ticket.val() === '') {
