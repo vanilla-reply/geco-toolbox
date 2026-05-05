@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         Geco-T Booking Modal(2025)
 // @namespace    https://geco.reply.com/
-// @version      3.30
+// @version      3.31
 // @description  Tweaks for our precious Geco
-// @author       sku, fsf, dkr, pna, fro, dor, r.allenstein@reply.de
+// @author       sku, fsf, dkr, pna, fro, dor, r.allenstein@reply.de, o.poglitsch@reply.de
 // @match        https://geco.reply.com/*
 // @match        https://geco.reply.eu/*
 // @downloadURL  https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco.user.js
@@ -44,7 +44,8 @@ var GecoConfigDefaults = {
     dayEndTime: '17:30',
     breakMinutes: 45,
     breakMode: 'auto',
-    enableFixedEndTime: true
+    enableFixedEndTime: true,
+    projectBlacklist: [7]
 };
 
 var GecoConfig = {
@@ -95,6 +96,34 @@ var GecoConfig = {
         }
 
         return totalHours <= 9 ? 30 : 45;
+    },
+
+    getProjectBlacklist: function() {
+        var value = this.get('projectBlacklist');
+
+        if (typeof value === 'string') {
+            try {
+                value = JSON.parse(value);
+            } catch (e) {
+                value = null;
+            }
+        }
+
+        if (!$.isArray(value)) {
+            return GecoConfigDefaults.projectBlacklist.slice();
+        }
+
+        var ids = [];
+
+        for (var i = 0; i < value.length; i++) {
+            var id = parseInt(value[i], 10);
+
+            if (!isNaN(id)) {
+                ids.push(id);
+            }
+        }
+
+        return ids;
     },
 
     isFixedEndTimeEnabled: function() {
@@ -365,7 +394,6 @@ var GecoExtension = {
         this._closeSettingsDialog();
 
         if ($('body').hasClass('geco-fe-enabled')) {
-            this._initDayStartTimes();
             this._fillDayTimes();
         }
     },
@@ -382,7 +410,6 @@ var GecoExtension = {
 
     _enableExtension: function() {
         this._highlightCurrentDay();
-        this._initDayStartTimes();
         this._observeSummaryHours();
 
         $('body').addClass('geco-fe-enabled');
@@ -742,21 +769,6 @@ var GecoExtension = {
         }, 200);
     },
 
-    _initDayStartTimes: function() {
-        $('input[id^="dayStartTime"]').each(function() {
-            var $input = $(this);
-            var isHoliday = $input.data('holiday') === true || $input.data('holiday') === 'true';
-
-            if (isHoliday || $input.val()) {
-                return;
-            }
-
-            $input.val(GecoConfig.getDayStartTime());
-            $input.trigger('change');
-            $input.trigger('focusout');
-        });
-    },
-
     _observeSummaryHours: function() {
         var self = this;
         var $summaryCells = $('.table--summary .table__cell[data-day]');
@@ -824,11 +836,80 @@ var GecoExtension = {
             return 0;
         }
 
+        var total;
+
         if (typeof Globalize !== 'undefined' && Globalize.parseFloat) {
-            return Globalize.parseFloat(text);
+            total = Globalize.parseFloat(text);
+        } else {
+            total = parseFloat(text.replace(',', '.'));
         }
 
-        return parseFloat(text.replace(',', '.'));
+        if (isNaN(total)) {
+            return 0;
+        }
+
+        return total;
+    },
+
+    _getBlacklistedHoursForDay: function(day) {
+        var blacklist = GecoConfig.getProjectBlacklist();
+
+        if (!blacklist.length) {
+            return 0;
+        }
+
+        var $cells = $('.table--hours .table__cell[data-day="' + day + '"][data-id]');
+
+        if (!$cells.length) {
+            return 0;
+        }
+
+        var excluded = 0;
+
+        $cells.each(function() {
+            var $cell = $(this);
+            var dataId = $cell.attr('data-id');
+
+            if (!dataId || dataId === '0') {
+                return;
+            }
+
+            var $projectSub = $('.ts-project-sub[data-id="' + dataId + '"]');
+
+            if (!$projectSub.length) {
+                return;
+            }
+
+            var projectId = parseInt($projectSub.attr('data-project-id'), 10);
+
+            if (isNaN(projectId) || $.inArray(projectId, blacklist) === -1) {
+                return;
+            }
+
+            var hoursStr = $cell.attr('data-hours-saved');
+
+            if (!hoursStr) {
+                hoursStr = $.trim($cell.find('.value').text());
+            }
+
+            if (!hoursStr) {
+                return;
+            }
+
+            hoursStr = String(hoursStr).replace(/[^\d,.\-]/g, '');
+
+            if (!hoursStr) {
+                return;
+            }
+
+            var cellHours = parseFloat(hoursStr.replace(',', '.'));
+
+            if (!isNaN(cellHours) && cellHours > 0) {
+                excluded += cellHours;
+            }
+        });
+
+        return excluded;
     },
 
     _updateDayEndTimeFromSummary: function(day) {
@@ -857,7 +938,29 @@ var GecoExtension = {
             return;
         }
 
-        var totalHours = this._getSummaryHoursForDay(day);
+        var grossHours = this._getSummaryHoursForDay(day);
+        var blacklistedHours = this._getBlacklistedHoursForDay(day);
+        var totalHours = grossHours - blacklistedHours;
+
+        if (totalHours < 0) {
+            totalHours = 0;
+        }
+
+        if (grossHours > 0 && totalHours <= 0) {
+            if ($startInput.val() !== '') {
+                $startInput.val('');
+                $startInput.trigger('change');
+                $startInput.trigger('focusout');
+            }
+
+            if ($endInput.val() !== '') {
+                $endInput.val('');
+                $endInput.trigger('change');
+                $endInput.trigger('focusout');
+            }
+
+            return;
+        }
 
         if (!totalHours || isNaN(totalHours) || totalHours <= 0) {
             return;
