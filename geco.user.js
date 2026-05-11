@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geco-T Booking Modal(2025)
 // @namespace    https://geco.reply.com/
-// @version      3.32
+// @version      3.33
 // @description  Tweaks for our precious Geco
 // @author       sku, fsf, dkr, pna, fro, dor, r.allenstein@reply.de, o.poglitsch@reply.de
 // @match        https://geco.reply.com/*
@@ -660,6 +660,10 @@ var GecoExtension = {
             return;
         }
 
+        this.$editbox.off('click.geco', 'a.icon.delete');
+        this.$editbox.off('click.geco', 'a.icon.cut, a.icon.copy');
+        this.$editbox.off('click.geco', 'a.icon.paste');
+
         this.$editbox.on('click.geco', 'a.icon.delete', $.proxy(this._deleteEntry, this));
         this.$editbox.on('click.geco', 'a.icon.cut, a.icon.copy', $.proxy(this._copyOrCutEntry, this));
         this.$editbox.on('click.geco', 'a.icon.paste', $.proxy(this._pasteEntry, this));
@@ -667,7 +671,7 @@ var GecoExtension = {
         this.$editbox.find('#hours-to-add').addClass('readonly').attr('readonly', 'readonly');
         $ta.addClass('inactive');
 
-        this.$editbox.find('.task-extension').remove();
+        this.$editbox.find('.task-extension').closest('.editbox__field').remove();
 
         for (var l2 = 0; l2 < lines.length; l2++) {
             if (lines[l2] !== '') {
@@ -717,6 +721,9 @@ var GecoExtension = {
         setTimeout(function() {
             self.$editbox.find('.editbox__field:last .task-extension input.ticket').focus();
         }, 300);
+
+        $(document).off('keyup.geco blur.geco', '.task-extension input');
+        $(document).off('click.geco', '.task-extension input');
 
         $(document).on('keyup.geco blur.geco', '.task-extension input', $.proxy(this._inputChange, this));
         $(document).on('click.geco', '.task-extension input', $.proxy(this._inputClick, this));
@@ -794,13 +801,10 @@ var GecoExtension = {
             this._updateText();
         } else {
             $(e.currentTarget).text('Copied!');
-
-            setTimeout(function() {
-                $(e.currentTarget).text('Copy');
-            }, 1500);
         }
 
-        this._hideEditBox();
+        this._extendInputFields();
+
         e.preventDefault();
 
         return false;
@@ -884,6 +888,20 @@ var GecoExtension = {
         return Globalize.format(n, 'n2');
     },
 
+    _refreshEntryActions: function() {
+        this.$editbox.find('.task-extension').each(function() {
+            var $te = $(this);
+            var hours = $.trim($te.find('input.hours').val());
+            var task = $.trim($te.find('input.task').val());
+
+            if (hours !== '' && task !== '' && !$te.find('a.icon.copy').length) {
+                $te.append('<a href="javascript:;" class="icon copy" title="Copy current entry" tabindex="-1">Copy</a>');
+                $te.append('<a href="javascript:;" class="icon cut" title="Cut current entry" tabindex="-1">Cut</a>');
+                $te.append('<a href="javascript:;" class="icon delete" title="Delete current entry" tabindex="-1">Delete</a>');
+            }
+        });
+    },
+
     _updateText: function() {
         var t = '';
         var hoursSum = 0;
@@ -911,8 +929,15 @@ var GecoExtension = {
             }
         });
 
-        this.$editbox.find('#notes-to-add').val($.trim(t));
+        var newNotesValue = $.trim(t);
+        var oldNotesValue = this.$editbox.find('#notes-to-add').val();
+
+        this.$editbox.find('#notes-to-add').val(newNotesValue);
         this.$editbox.find('#hours-to-add').val(hoursSum > 0 ? self._formatTime(hoursSum) : '');
+
+        if (oldNotesValue !== newNotesValue) {
+            this._refreshEntryActions();
+        }
 
         setTimeout(function() {
             self._fillDayTimes();
