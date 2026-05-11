@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geco-T Booking Modal(2025)
 // @namespace    https://geco.reply.com/
-// @version      3.33
+// @version      3.34
 // @description  Tweaks for our precious Geco
 // @author       sku, fsf, dkr, pna, fro, dor, r.allenstein@reply.de, o.poglitsch@reply.de
 // @match        https://geco.reply.com/*
@@ -822,7 +822,6 @@ var GecoExtension = {
 
         $notes.val($notes.val() + t);
 
-        this.dataStorage = null;
         this._extendInputFields();
 
         return false;
@@ -889,15 +888,31 @@ var GecoExtension = {
     },
 
     _refreshEntryActions: function() {
+        var hasClipboardData = !!this.dataStorage;
+
         this.$editbox.find('.task-extension').each(function() {
             var $te = $(this);
             var hours = $.trim($te.find('input.hours').val());
             var task = $.trim($te.find('input.task').val());
+            var hasValidEntry = hours !== '' && task !== '';
+            var isCurrentEntry = $te.hasClass('current');
 
-            if (hours !== '' && task !== '' && !$te.find('a.icon.copy').length) {
-                $te.append('<a href="javascript:;" class="icon copy" title="Copy current entry" tabindex="-1">Copy</a>');
-                $te.append('<a href="javascript:;" class="icon cut" title="Cut current entry" tabindex="-1">Cut</a>');
-                $te.append('<a href="javascript:;" class="icon delete" title="Delete current entry" tabindex="-1">Delete</a>');
+            if (hasValidEntry) {
+                $te.find('a.icon.paste').remove();
+
+                if (!$te.find('a.icon.copy').length) {
+                    $te.append('<a href="javascript:;" class="icon copy" title="Copy current entry" tabindex="-1">Copy</a>');
+                    $te.append('<a href="javascript:;" class="icon cut" title="Cut current entry" tabindex="-1">Cut</a>');
+                    $te.append('<a href="javascript:;" class="icon delete" title="Delete current entry" tabindex="-1">Delete</a>');
+                }
+
+                return;
+            }
+
+            $te.find('a.icon.copy, a.icon.cut, a.icon.delete').remove();
+
+            if (isCurrentEntry && hasClipboardData && !$te.find('a.icon.paste').length) {
+                $te.append('<a href="javascript:;" class="icon paste" title="Paste entry">Paste</a>');
             }
         });
     },
