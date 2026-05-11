@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geco-T Booking Modal(2025)
 // @namespace    https://geco.reply.com/
-// @version      3.31
+// @version      3.32
 // @description  Tweaks for our precious Geco
 // @author       sku, fsf, dkr, pna, fro, dor, r.allenstein@reply.de, o.poglitsch@reply.de
 // @match        https://geco.reply.com/*
@@ -45,6 +45,7 @@ var GecoConfigDefaults = {
     breakMinutes: 45,
     breakMode: 'auto',
     enableFixedEndTime: true,
+    defaultOfficeId: '2',
     projectBlacklist: [7]
 };
 
@@ -134,6 +135,7 @@ var GecoConfig = {
     saveFromDialog: function($dialog) {
         this.set('dayStartTime', $dialog.find('input[name="dayStartTime"]').val());
         this.set('dayEndTime', $dialog.find('input[name="dayEndTime"]').val());
+        this.set('defaultOfficeId', $dialog.find('select[name="defaultOfficeId"]').val());
         this.set('breakMinutes', parseInt($dialog.find('input[name="breakMinutes"]').val(), 10));
         this.set('breakMode', $dialog.find('input[name="breakMode"]:checked').val());
         this.set('enableFixedEndTime', $dialog.find('input[name="enableFixedEndTime"]').is(':checked'));
@@ -142,9 +144,14 @@ var GecoConfig = {
     reset: function() {
         this.set('dayStartTime', GecoConfigDefaults.dayStartTime);
         this.set('dayEndTime', GecoConfigDefaults.dayEndTime);
+        this.set('defaultOfficeId', GecoConfigDefaults.defaultOfficeId);
         this.set('breakMinutes', GecoConfigDefaults.breakMinutes);
         this.set('breakMode', GecoConfigDefaults.breakMode);
         this.set('enableFixedEndTime', GecoConfigDefaults.enableFixedEndTime);
+    },
+
+    getDefaultOfficeId: function() {
+        return this.get('defaultOfficeId');
     }
 };
 
@@ -166,9 +173,13 @@ var GecoExtension = {
     dataStorage: null,
     intervalId: null,
     summaryObserver: null,
+    officeOptionsCache: null,
+    officeRequestObserverInitialized: false,
 
     run: function() {
         var self = this;
+
+        this._observeOfficeRequest();
 
         setInterval(function() {
             if ($('.page__content').length) {
@@ -265,7 +276,7 @@ var GecoExtension = {
             .geco-fe-settings-dialog { position: fixed; z-index: 99999; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 390px; background: #fff; border-radius: 4px; box-shadow: 0 2px 18px rgba(0,0,0,0.35); padding: 16px; color: #333; font-size: 13px; text-align: left; } \
             .geco-fe-settings-dialog h3 { margin: 0 0 12px 0; font-size: 16px; line-height: 20px; } \
             .geco-fe-settings-dialog label { display: block; margin: 10px 0 4px 0; line-height: normal; } \
-            .geco-fe-settings-dialog input[type="text"], .geco-fe-settings-dialog input[type="number"] { width: 100%; box-sizing: border-box; padding: 5px; } \
+            .geco-fe-settings-dialog input[type="text"], .geco-fe-settings-dialog input[type="number"], .geco-fe-settings-dialog select { width: 100%; box-sizing: border-box; padding: 5px; } \
             .geco-fe-settings-dialog .geco-fe-settings-checkbox { margin-top: 12px; } \
             .geco-fe-settings-dialog .geco-fe-settings-checkbox input { margin-right: 5px; } \
             .geco-fe-settings-dialog .geco-fe-settings-radio { margin: 0; padding-top: 0; font-weight: normal; } \
@@ -300,17 +311,94 @@ var GecoExtension = {
         $chkbox.closest('.geco-fe-checkbox-container').on('click.geco', '.geco-fe-settings-button', $.proxy(this._openSettingsDialog, this));
     },
 
+    _observeOfficeRequest: function() {
+        var self = this;
+
+        if (this.officeRequestObserverInitialized) {
+            return;
+        }
+
+        this.officeRequestObserverInitialized = true;
+
+        if (typeof XMLHttpRequest === 'undefined') {
+            return;
+        }
+
+        var originalOpen = XMLHttpRequest.prototype.open;
+        var originalSend = XMLHttpRequest.prototype.send;
+
+        XMLHttpRequest.prototype.open = function(method, url) {
+            this._gecoOfficeRequestUrl = url;
+            return originalOpen.apply(this, arguments);
+        };
+
+        XMLHttpRequest.prototype.send = function(body) {
+            var xhr = this;
+
+            xhr.addEventListener('load', function() {
+                var url = xhr._gecoOfficeRequestUrl ? String(xhr._gecoOfficeRequestUrl) : '';
+
+                if (url.indexOf('/WebServiceAD/GeCo.asmx/GetOfficeOrderedByUserCountry_1_0') === -1) {
+                    return;
+                }
+
+                self._handleOfficeResponse(xhr.responseText);
+            });
+
+            return originalSend.apply(this, arguments);
+        };
+    },
+
+    _handleOfficeResponse: function(responseText) {
+        var response;
+        var options = [];
+
+        if (!responseText) {
+            return;
+        }
+
+        try {
+            response = JSON.parse(responseText);
+        } catch (e) {
+            return;
+        }
+
+        if (!response || !$.isArray(response.d)) {
+            return;
+        }
+
+        $.each(response.d, function(i, item) {
+            options.push({
+                key: typeof item.Key === 'undefined' ? '' : String(item.Key),
+                value: typeof item.Value === 'undefined' ? '' : String(item.Value)
+            });
+        });
+
+        this.officeOptionsCache = options;
+        this._refreshSettingsOfficeOptions();
+    },
+
     _openSettingsDialog: function() {
         $('.geco-fe-settings-overlay, .geco-fe-settings-dialog').remove();
 
         var fixedEndTimeChecked = GecoConfig.isFixedEndTimeEnabled() ? ' checked="checked"' : '';
         var fixedBreakChecked = GecoConfig.getBreakMode() === 'fixed' ? ' checked="checked"' : '';
         var autoBreakChecked = GecoConfig.getBreakMode() === 'auto' ? ' checked="checked"' : '';
+        var officeOptionsHtml = this._getOfficeOptionsHtml();
 
         var $overlay = $('<div class="geco-fe-settings-overlay"></div>');
         var $dialog = $('' +
             '<div class="geco-fe-settings-dialog">' +
             '<h3>GECO Toolbox Settings</h3>' +
+
+            '<label for="geco-fe-default-office">Default office</label>' +
+            '<select id="geco-fe-default-office" name="defaultOfficeId">' +
+            officeOptionsHtml +
+            '</select>' +
+
+            '<div class="geco-fe-settings-hint geco-fe-office-loading-hint" style="display:none;">' +
+            'Office values are not loaded yet. Open a booking cell once so GECO loads them, then this dropdown will update automatically.' +
+            '</div>' +
 
             '<label for="geco-fe-day-start-time">Start time</label>' +
             '<input type="text" id="geco-fe-day-start-time" name="dayStartTime" value="' + GecoConfig.getDayStartTime() + '" placeholder="08:30" />' +
@@ -353,6 +441,8 @@ var GecoExtension = {
 
         $('body').append($overlay).append($dialog);
 
+        this._refreshSettingsOfficeOptions();
+
         $overlay.on('click.geco', $.proxy(this._closeSettingsDialog, this));
         $dialog.on('click.geco', '.geco-fe-settings-cancel', $.proxy(this._closeSettingsDialog, this));
         $dialog.on('click.geco', '.geco-fe-settings-save', $.proxy(this._saveSettingsDialog, this));
@@ -360,6 +450,48 @@ var GecoExtension = {
         $dialog.on('change.geco', 'input[name="enableFixedEndTime"]', function() {
             $dialog.find('.geco-fe-break-rule-settings').toggle(!$(this).is(':checked'));
         });
+    },
+
+    _getOfficeOptionsHtml: function() {
+        var selectedOfficeId = GecoConfig.getDefaultOfficeId();
+
+        if (this.officeOptionsCache && this.officeOptionsCache.length) {
+            return this._createOfficeOptionsHtml(this.officeOptionsCache, selectedOfficeId);
+        }
+
+        return '<option value="' + selectedOfficeId + '" selected="selected">Waiting for office values...</option>';
+    },
+
+    _refreshSettingsOfficeOptions: function() {
+        var $dialogOfficeSelect = $('#geco-fe-default-office');
+
+        if (!$dialogOfficeSelect.length) {
+            return;
+        }
+
+        if (!this.officeOptionsCache || !this.officeOptionsCache.length) {
+            $dialogOfficeSelect.prop('disabled', true);
+            $('.geco-fe-office-loading-hint').show();
+            return;
+        }
+
+        $dialogOfficeSelect
+            .html(this._createOfficeOptionsHtml(this.officeOptionsCache, GecoConfig.getDefaultOfficeId()))
+            .prop('disabled', false);
+
+        $('.geco-fe-office-loading-hint').hide();
+    },
+
+    _createOfficeOptionsHtml: function(options, selectedOfficeId) {
+        var html = '';
+
+        $.each(options, function(i, option) {
+            var selected = option.key === selectedOfficeId ? ' selected="selected"' : '';
+
+            html += '<option value="' + option.key + '"' + selected + '>' + option.value + '</option>';
+        });
+
+        return html;
     },
 
     _closeSettingsDialog: function() {
@@ -377,6 +509,11 @@ var GecoExtension = {
 
         if (!this._isValidTime($dialog.find('input[name="dayEndTime"]').val())) {
             alert('Please enter a valid end time in HH:MM format, e.g. 17:30.');
+            return;
+        }
+
+        if ($dialog.find('select[name="defaultOfficeId"]').is(':disabled')) {
+            alert('Office values are still loading. Please wait until the dropdown is available.');
             return;
         }
 
@@ -482,6 +619,8 @@ var GecoExtension = {
         var task;
         var epicKey;
         var self = this;
+
+        this._applyDefaultOffice();
 
         if (text.length > 0 && text.match(this.options.oldLineExpr)) {
             lines = text.split(this.options.oldLineSplitter);
@@ -610,6 +749,18 @@ var GecoExtension = {
         if (epicKey === '') epicKey = '0';
 
         return package + ';' + ticket + ';' + hours + ';' + task + ';' + epicKey;
+    },
+
+    _applyDefaultOffice: function() {
+        var $office = this.$editbox ? this.$editbox.find('#office-to-add') : $();
+
+        if (!$office.length) {
+            return;
+        }
+
+        if ($office.val() === '') {
+            $office.val(GecoConfig.getDefaultOfficeId());
+        }
     },
 
     _hideEditBox: function() {
@@ -762,7 +913,6 @@ var GecoExtension = {
 
         this.$editbox.find('#notes-to-add').val($.trim(t));
         this.$editbox.find('#hours-to-add').val(hoursSum > 0 ? self._formatTime(hoursSum) : '');
-        this.$editbox.find('#office-to-add').val(this.$editbox.find('#office-to-add').val() != '' ? this.$editbox.find('#office-to-add').val() : 2);
 
         setTimeout(function() {
             self._fillDayTimes();
