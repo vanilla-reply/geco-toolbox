@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geco-T Location Statistics
 // @namespace    https://geco.reply.com/
-// @version      1.1
+// @version      1.2
 // @description  Shows monthly location shares based on GECO timesheet responses
 // @author       o.poglitsch@reply.de
 // @match        https://geco.reply.com/*
