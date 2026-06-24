@@ -95,7 +95,7 @@
                 #geco-location-statistics .geco-location-statistics__progress-row { display: flex; align-items: center; gap: 5px; line-height: 10px; } \
                 #geco-location-statistics .geco-location-statistics__progress { display: flex; flex: 1 1 auto; width: 100%; height: 15px; overflow: visible; margin-top: -5px;} \
                 #geco-location-statistics .geco-location-statistics__progress-counter { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; font-weight: bold; font-size: 11px; white-space: nowrap; } \
-                #geco-location-statistics .geco-location-statistics__mode-button { appearance: none; border: 0; background: transparent; color: #747474; width: 15px; height: 15px; padding: 1px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; order: 2; } \
+                #geco-location-statistics .geco-location-statistics__mode-button { appearance: none; border: 0; background: transparent; color: #747474; width: 15px; height: 8px; padding: 1px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; order: 2; } \
                 #geco-location-statistics .geco-location-statistics__mode-button:hover { color: #333333; } \
                 #geco-location-statistics .geco-location-statistics__mode-button svg { width: 13px; height: 13px; display: block; stroke: currentColor; } \
                 #geco-location-statistics .geco-location-statistics__progress-segment { height: 10px; min-width: 2px; position: relative; margin-top: 5px; } \
@@ -117,6 +117,13 @@
                 .on('click.gecoLocationStatistics', '.geco-location-statistics__mode-button', function(event) {
                     event.preventDefault();
                     self._switchMode();
+                })
+                .off('mouseenter.gecoLocationStatistics mouseleave.gecoLocationStatistics', '.geco-location-statistics__progress-segment')
+                .on('mouseenter.gecoLocationStatistics', '.geco-location-statistics__progress-segment', function() {
+                    self._highlightSegmentDays($(this));
+                })
+                .on('mouseleave.gecoLocationStatistics', '.geco-location-statistics__progress-segment', function() {
+                    self._clearDayHighlights();
                 });
         },
 
@@ -355,12 +362,14 @@
                             officeId: officeData.officeId,
                             officeName: officeData.officeName,
                             hours: 0,
-                            days: 0
+                            days: 0,
+                            dates: []
                         };
                     }
 
                     result.locations[officeKey].hours += officeData.hours;
                     result.locations[officeKey].days += dayFraction;
+                    result.locations[officeKey].dates.push(date);
                 });
             });
 
@@ -569,7 +578,8 @@
                 officeId: null,
                 officeName: 'Not assigned',
                 hours: unassignedDays * result.legalEntityWorkingHours,
-                days: unassignedDays
+                days: unassignedDays,
+                dates: []
             };
         },
 
@@ -701,6 +711,116 @@
                 .replace(/'/g, '&#039;');
         },
 
+        _getUniqueDaysFromDates: function(dates) {
+            var days = [];
+            var seenDays = {};
+
+            $.each(dates || [], function(i, date) {
+                var day = GecoLocationStatistics._getDayFromDate(date);
+
+                if (!day || seenDays[String(day)]) {
+                    return;
+                }
+
+                seenDays[String(day)] = true;
+                days.push(day);
+            });
+
+            return days;
+        },
+
+        _highlightSegmentDays: function($segment) {
+            var days = String($segment.attr('data-highlight-days') || '').split(',');
+            var color = $segment.attr('data-highlight-color') || 'rgba(0, 166, 166, 0.25)';
+            var highlightColor = this._hexToRgba(color, 0.25);
+            var self = this;
+
+            this._clearDayHighlights();
+
+            $.each(days, function(i, day) {
+                day = parseInt(day, 10);
+
+                if (!day) {
+                    return;
+                }
+
+                $.each(self._getWeeksForDay(day), function(weekIndex, week) {
+                    self._getTableCellsForDayWeek(day, week).each(function() {
+                        var $cell = $(this);
+
+                        $cell
+                            .attr('data-geco-location-statistics-original-background-color', $cell[0].style.backgroundColor || '')
+                            .css('background-color', highlightColor)
+                            .addClass('geco-location-statistics__day-highlight');
+                    });
+                });
+            });
+        },
+
+        _clearDayHighlights: function() {
+            $('.table__cell.geco-location-statistics__day-highlight').each(function() {
+                var $cell = $(this);
+                var originalBackgroundColor = $cell.attr('data-geco-location-statistics-original-background-color');
+
+                $cell
+                    .removeClass('geco-location-statistics__day-highlight')
+                    .css('background-color', originalBackgroundColor || '')
+                    .removeAttr('data-geco-location-statistics-original-background-color');
+            });
+        },
+
+        _hexToRgba: function(color, alpha) {
+            var hex = String(color || '').replace('#', '');
+            var red;
+            var green;
+            var blue;
+
+            if (hex.length === 3) {
+                hex = hex.charAt(0) + hex.charAt(0) +
+                    hex.charAt(1) + hex.charAt(1) +
+                    hex.charAt(2) + hex.charAt(2);
+            }
+
+            if (!/^[0-9a-f]{6}$/i.test(hex)) {
+                return color;
+            }
+
+            red = parseInt(hex.substr(0, 2), 16);
+            green = parseInt(hex.substr(2, 2), 16);
+            blue = parseInt(hex.substr(4, 2), 16);
+
+            return 'rgba(' + red + ', ' + green + ', ' + blue + ', ' + alpha + ')';
+        },
+
+        _getWeeksForDay: function(day) {
+            var weeks = [];
+            var seenWeeks = {};
+
+            $('.table__cell[data-day][data-week]').filter(function() {
+                return String($(this).attr('data-day')) === String(day);
+            }).each(function() {
+                var week = String($(this).attr('data-week'));
+
+                if (!week || seenWeeks[week]) {
+                    return;
+                }
+
+                seenWeeks[week] = true;
+                weeks.push(week);
+            });
+
+            return weeks;
+        },
+
+        _getTableCellsForDayWeek: function(day, week) {
+            return $('.table__cell[data-day][data-week]').filter(function() {
+                var $cell = $(this);
+
+                return String($cell.attr('data-day')) === String(day) &&
+                    String($cell.attr('data-week')) === String(week);
+            });
+        },
+
         _renderStatistics: function(statistics) {
             var self = this;
             var locationKeys = [];
@@ -713,8 +833,8 @@
             var counterTitle;
             var colors = [
                 '#00a6a6',
-                '#ff6b6b',
                 '#f5a623',
+                '#ff6b6b',
                 '#79c143',
                 '#F06EAA',
                 '#54C9EA',
@@ -764,12 +884,20 @@
                 var tooltipText;
                 var ptLabel;
                 var percentLabel;
+                var highlightDays;
+                var highlightAttributes = '';
 
                 percentLabel = self._formatNumber(percent, 1) + '%';
                 widthPercent = self._formatNumber(percent, 2).replace(',', '.');
                 color = locationKey === 'unassigned' ? '#eee' : colors[i % colors.length];
                 ptLabel = self._formatNumber(location.days, location.days % 1 === 0 ? 0 : 1) + ' Days';
                 tooltipText = location.officeName + ': ' + percentLabel + ' · ' + ptLabel;
+                highlightDays = self._getUniqueDaysFromDates(location.dates);
+
+                if (highlightDays.length) {
+                    highlightAttributes = ' data-highlight-days="' + self._escapeHtml(highlightDays.join(',')) + '"' +
+                        ' data-highlight-color="' + self._escapeHtml(color) + '"';
+                }
 
                 if (locationKey !== 'unassigned') {
                     legendHtml += '' +
@@ -783,7 +911,7 @@
 
                 html += '' +
                     '<div class="geco-location-statistics__progress-segment" ' +
-                    'style="width: ' + widthPercent + '%; background: ' + color + ';">' +
+                    'style="width: ' + widthPercent + '%; background: ' + color + ';"' + highlightAttributes + '>' +
                     '<b>' + self._escapeHtml(tooltipText) + '</b>' +
                     '</div>';
             });
