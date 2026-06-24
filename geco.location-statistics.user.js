@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geco-T Location Statistics
 // @namespace    https://geco.reply.com/
-// @version      1.0
+// @version      1.1
 // @description  Shows monthly location shares based on GECO timesheet responses
 // @author       o.poglitsch@reply.de
 // @match        https://geco.reply.com/*
@@ -281,10 +281,6 @@
                 $.each(offices, function(officeKey, officeData) {
                     var dayFraction = officeData.hours / result.legalEntityWorkingHours;
 
-                    if (dayFraction > 1) {
-                        dayFraction = 1;
-                    }
-
                     if (!result.locations[officeKey]) {
                         result.locations[officeKey] = {
                             officeId: officeData.officeId,
@@ -508,10 +504,6 @@
                 var tooltipText;
                 var ptLabel;
                 var percentLabel;
-
-                if (percent > 100) {
-                    percent = 100;
-                }
 
                 percentLabel = self._formatNumber(percent, 1) + '%';
                 widthPercent = self._formatNumber(percent, 2).replace(',', '.');
