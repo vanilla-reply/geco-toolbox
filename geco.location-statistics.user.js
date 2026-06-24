@@ -15,13 +15,22 @@
 
     var GecoLocationStatistics = {
         excludedProjectIds: [7],
+        storageKey: 'geco-location-statistics-mode',
+        modes: ['month', 'booked-hours', 'until-now'],
+        modeLabels: {
+            month: 'Month',
+            'booked-hours': 'Booked hours',
+            'until-now': 'Until now'
+        },
         latestTimesheet: null,
         latestStatisticsSignature: '',
         initialized: false,
         xhrObserved: false,
         fetchObserved: false,
+        mode: 'month',
 
         run: function() {
+            this.mode = this._loadMode();
             this._applyStyles();
             this._observeXhr();
             this._observeFetch();
@@ -43,12 +52,14 @@
 
         _init: function() {
             if (this.initialized && $('#geco-location-statistics').length) {
+                this._bindEvents();
                 return;
             }
 
             this.initialized = true;
 
             if ($('#geco-location-statistics').length) {
+                this._bindEvents();
                 return;
             }
 
@@ -67,6 +78,8 @@
             } else {
                 $('body').append($box);
             }
+
+            this._bindEvents();
         },
 
         _applyStyles: function() {
@@ -81,7 +94,10 @@
                 #geco-location-statistics .geco-location-statistics__legend-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } \
                 #geco-location-statistics .geco-location-statistics__progress-row { display: flex; align-items: center; gap: 5px; line-height: 10px; } \
                 #geco-location-statistics .geco-location-statistics__progress { display: flex; flex: 1 1 auto; width: 100%; height: 15px; overflow: visible; margin-top: -5px;} \
-                #geco-location-statistics .geco-location-statistics__progress-counter { flex: 0 0 auto; font-weight: bold; font-size: 11px; white-space: nowrap; } \
+                #geco-location-statistics .geco-location-statistics__progress-counter { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; font-weight: bold; font-size: 11px; white-space: nowrap; } \
+                #geco-location-statistics .geco-location-statistics__mode-button { appearance: none; border: 0; background: transparent; color: #747474; width: 15px; height: 15px; padding: 1px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; order: 2; } \
+                #geco-location-statistics .geco-location-statistics__mode-button:hover { color: #333333; } \
+                #geco-location-statistics .geco-location-statistics__mode-button svg { width: 13px; height: 13px; display: block; stroke: currentColor; } \
                 #geco-location-statistics .geco-location-statistics__progress-segment { height: 10px; min-width: 2px; position: relative; margin-top: 5px; } \
                 #geco-location-statistics .geco-location-statistics__progress-segment b { font-weight: normal; color: #747474; font-size: 10px; text-align: center; text-indent: 0; background: #ffffff; box-shadow: 0 0 3px #e7e7e7; min-width: max-content; max-width: 160px; position: absolute; left: 50%; bottom: 15px; transform: translateX(-50%); padding: 5px; border: 1px solid #e7e7e7; display: none; line-height: 13px; white-space: normal; z-index: 100; } \
                 #geco-location-statistics .geco-location-statistics__progress-segment:hover { margin-top: 0; padding-top: 5px; } \
@@ -91,6 +107,17 @@
             </style>';
 
             $('head').append(styles);
+        },
+
+        _bindEvents: function() {
+            var self = this;
+
+            $('#geco-location-statistics')
+                .off('click.gecoLocationStatistics', '.geco-location-statistics__mode-button')
+                .on('click.gecoLocationStatistics', '.geco-location-statistics__mode-button', function(event) {
+                    event.preventDefault();
+                    self._switchMode();
+                });
         },
 
         _observeXhr: function() {
@@ -198,13 +225,53 @@
             $('#geco-location-statistics .geco-location-statistics__content').html(this._renderStatistics(statistics));
         },
 
+        _loadMode: function() {
+            var storedMode;
+
+            try {
+                storedMode = window.localStorage.getItem(this.storageKey);
+            } catch (e) {
+                storedMode = null;
+            }
+
+            if ($.inArray(storedMode, this.modes) !== -1) {
+                return storedMode;
+            }
+
+            return 'month';
+        },
+
+        _saveMode: function(mode) {
+            try {
+                window.localStorage.setItem(this.storageKey, mode);
+            } catch (e) {
+                return;
+            }
+        },
+
+        _switchMode: function() {
+            var currentIndex = $.inArray(this.mode, this.modes);
+            var nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % this.modes.length;
+
+            this.mode = this.modes[nextIndex];
+            this._saveMode(this.mode);
+            this.latestStatisticsSignature = '';
+
+            if (this.latestTimesheet) {
+                this._renderFromTimesheet(this.latestTimesheet);
+            }
+        },
+
         _calculateStatistics: function(timesheet) {
             var legalEntityWorkingHours = parseFloat(timesheet.LegalEntityWorkingHours);
             var workingDays = this._getWorkingDays(timesheet);
+            var mode = this.mode;
             var excludedHoursByDate = {};
             var officeHoursByDate = {};
             var effectiveWorkingDays = {};
             var result = {
+                mode: mode,
+                modeLabel: this.modeLabels[mode] || this.modeLabels.month,
                 monthName: timesheet.MonthName || timesheet.Month || '',
                 legalEntityWorkingHours: isNaN(legalEntityWorkingHours) || legalEntityWorkingHours <= 0 ? 8 : legalEntityWorkingHours,
                 workingDaysTotal: 0,
@@ -214,6 +281,7 @@
             };
 
             result.workingDaysTotal = workingDays.length;
+            workingDays = this._filterWorkingDaysByMode(workingDays, timesheet, mode);
 
             for (var w = 0; w < workingDays.length; w++) {
                 effectiveWorkingDays[String(workingDays[w])] = true;
@@ -224,8 +292,13 @@
                 var project = context.project;
                 var date = reporting.Date;
                 var hours = parseFloat(reporting.Hours);
+                var day = GecoLocationStatistics._getDayFromDate(date);
 
-                if (!date || isNaN(hours) || hours <= 0) {
+                if (!date || !day || isNaN(hours) || hours <= 0) {
+                    return;
+                }
+
+                if (!effectiveWorkingDays[String(day)]) {
                     return;
                 }
 
@@ -257,13 +330,9 @@
             });
 
             $.each(excludedHoursByDate, function(date, hours) {
-                var day = GecoLocationStatistics._getDayFromDate(date);
-
-                if (!day || !effectiveWorkingDays[String(day)]) {
-                    return;
-                }
-
                 if (hours >= result.legalEntityWorkingHours) {
+                    var day = GecoLocationStatistics._getDayFromDate(date);
+
                     delete effectiveWorkingDays[String(day)];
                     result.excludedDays++;
                 }
@@ -300,9 +369,191 @@
             return result;
         },
 
+        _filterWorkingDaysByMode: function(workingDays, timesheet, mode) {
+            var today;
+            var timesheetMonthInfo;
+
+            if (mode !== 'until-now') {
+                return workingDays;
+            }
+
+            today = new Date();
+            timesheetMonthInfo = this._getTimesheetMonthInfo(timesheet);
+
+            if (!timesheetMonthInfo) {
+                return $.grep(workingDays, function(day) {
+                    return day <= today.getDate();
+                });
+            }
+
+            if (
+                timesheetMonthInfo.year < today.getFullYear() ||
+                (timesheetMonthInfo.year === today.getFullYear() && timesheetMonthInfo.month < today.getMonth() + 1)
+            ) {
+                return workingDays;
+            }
+
+            if (
+                timesheetMonthInfo.year > today.getFullYear() ||
+                (timesheetMonthInfo.year === today.getFullYear() && timesheetMonthInfo.month > today.getMonth() + 1)
+            ) {
+                return [];
+            }
+
+            return $.grep(workingDays, function(day) {
+                return day <= today.getDate();
+            });
+        },
+
+        _getTimesheetMonthInfo: function(timesheet) {
+            var timesheetYearMonth = this._getTimesheetYearMonth(timesheet);
+            var navigationYearMonth;
+            var sampleDate;
+            var parts;
+            var year;
+            var month;
+
+            if (timesheetYearMonth) {
+                return timesheetYearMonth;
+            }
+
+            navigationYearMonth = this._parseMonthText($('#ts-navigation input').val());
+
+            if (navigationYearMonth) {
+                return navigationYearMonth;
+            }
+
+            sampleDate = this._getFirstReportingDate(timesheet);
+
+            if (!sampleDate) {
+                return null;
+            }
+
+            parts = String(sampleDate).split('-');
+
+            if (parts.length < 2) {
+                return null;
+            }
+
+            year = parseInt(parts[0], 10);
+            month = parseInt(parts[1], 10);
+
+            if (isNaN(year) || isNaN(month)) {
+                return null;
+            }
+
+            return {
+                year: year,
+                month: month
+            };
+        },
+
+        _getTimesheetYearMonth: function(timesheet) {
+            var year = parseInt(timesheet.Year || timesheet.TimesheetYear || timesheet.SelectedYear, 10);
+            var month = parseInt(timesheet.Month || timesheet.MonthNumber || timesheet.SelectedMonth, 10);
+            var parsedMonthText;
+
+            if (!isNaN(year) && !isNaN(month) && month >= 1 && month <= 12) {
+                return {
+                    year: year,
+                    month: month
+                };
+            }
+
+            parsedMonthText = this._parseMonthText((timesheet.MonthName || '') + ' ' + (timesheet.Month || ''));
+
+            if (parsedMonthText) {
+                return parsedMonthText;
+            }
+
+            return null;
+        },
+
+        _parseMonthText: function(value) {
+            var text = String(value || '').toLowerCase();
+            var yearMatch = text.match(/\b(20\d{2})\b/);
+            var numericYearMonthMatch = text.match(/\b(20\d{2})\D+([01]?\d)\b/);
+            var numericMonthYearMatch = text.match(/\b([01]?\d)\D+(20\d{2})\b/);
+            var monthNames = {
+                january: 1, jan: 1, januar: 1,
+                february: 2, feb: 2, februar: 2,
+                march: 3, mar: 3, maerz: 3, 'märz': 3,
+                april: 4, apr: 4,
+                may: 5, mai: 5,
+                june: 6, jun: 6, juni: 6,
+                july: 7, jul: 7, juli: 7,
+                august: 8, aug: 8,
+                september: 9, sep: 9,
+                october: 10, oct: 10, oktober: 10, okt: 10,
+                november: 11, nov: 11,
+                december: 12, dec: 12, dezember: 12, dez: 12
+            };
+            var monthName;
+            var month;
+
+            if (numericYearMonthMatch) {
+                month = parseInt(numericYearMonthMatch[2], 10);
+
+                if (month >= 1 && month <= 12) {
+                    return {
+                        year: parseInt(numericYearMonthMatch[1], 10),
+                        month: month
+                    };
+                }
+            }
+
+            if (numericMonthYearMatch) {
+                month = parseInt(numericMonthYearMatch[1], 10);
+
+                if (month >= 1 && month <= 12) {
+                    return {
+                        year: parseInt(numericMonthYearMatch[2], 10),
+                        month: month
+                    };
+                }
+            }
+
+            if (!yearMatch) {
+                return null;
+            }
+
+            for (monthName in monthNames) {
+                if (Object.prototype.hasOwnProperty.call(monthNames, monthName) && text.indexOf(monthName) !== -1) {
+                    return {
+                        year: parseInt(yearMatch[1], 10),
+                        month: monthNames[monthName]
+                    };
+                }
+            }
+
+            return null;
+        },
+
+        _getFirstReportingDate: function(timesheet) {
+            var firstDate = null;
+
+            this._walkTimeReportings(timesheet, function(context) {
+                if (!firstDate && context.reporting && context.reporting.Date) {
+                    firstDate = context.reporting.Date;
+                }
+            });
+
+            return firstDate;
+        },
+
         _addUnassignedDays: function(result) {
             var assignedDays = 0;
             var unassignedDays;
+
+            if (result.mode === 'booked-hours') {
+                result.workingDaysEffective = 0;
+
+                $.each(result.locations, function(locationKey, locationData) {
+                    result.workingDaysEffective += locationData.days;
+                });
+
+                return;
+            }
 
             $.each(result.locations, function(locationKey, locationData) {
                 assignedDays += locationData.days;
@@ -459,6 +710,7 @@
             var assignedDays = 0;
             var assignedDaysLabel;
             var denominatorDaysLabel;
+            var counterTitle;
             var colors = [
                 '#00a6a6',
                 '#ff6b6b',
@@ -490,11 +742,19 @@
             });
 
             if (!locationKeys.length || denominatorDays <= 0) {
-                return '<div class="geco-location-statistics__empty">No office time reportings found.</div>';
+                return '' +
+                    '<div class="geco-location-statistics__progress-row">' +
+                    '<div class="geco-location-statistics__empty">No office time reportings found.</div>' +
+                    '<span class="geco-location-statistics__progress-counter" title="' + self._escapeHtml(statistics.modeLabel) + '">' +
+                    '<span>' + self._escapeHtml(statistics.modeLabel) + '</span>' +
+                    self._renderModeButton(statistics) +
+                    '</span>' +
+                    '</div>';
             }
 
             assignedDaysLabel = self._formatNumber(assignedDays, assignedDays % 1 === 0 ? 0 : 1);
             denominatorDaysLabel = self._formatNumber(denominatorDays, denominatorDays % 1 === 0 ? 0 : 1);
+            counterTitle = self._escapeHtml(statistics.modeLabel + ': assigned workdays / total workdays');
 
             $.each(locationKeys, function(i, locationKey) {
                 var location = statistics.locations[locationKey];
@@ -536,10 +796,28 @@
                 '<div class="geco-location-statistics__progress">' +
                 html +
                 '</div>' +
-                '<span class="geco-location-statistics__progress-counter" title="Assigned workdays / total workdays">' +
-                assignedDaysLabel + '/' + denominatorDaysLabel + ' Days' +
+                '<span class="geco-location-statistics__progress-counter" title="' + counterTitle + '">' +
+                '<span>' + assignedDaysLabel + '/' + denominatorDaysLabel + ' Days</span>' +
+                self._renderModeButton(statistics) +
                 '</span>' +
                 '</div>';
+        },
+
+        _renderModeButton: function(statistics) {
+            return '' +
+                '<button type="button" class="geco-location-statistics__mode-button" title="Switch mode: ' + this._escapeHtml(statistics.modeLabel) + '" aria-label="Switch mode">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                '<path d="M4 21v-7"></path>' +
+                '<path d="M4 10V3"></path>' +
+                '<path d="M12 21v-9"></path>' +
+                '<path d="M12 8V3"></path>' +
+                '<path d="M20 21v-5"></path>' +
+                '<path d="M20 12V3"></path>' +
+                '<path d="M2 14h4"></path>' +
+                '<path d="M10 8h4"></path>' +
+                '<path d="M18 16h4"></path>' +
+                '</svg>' +
+                '</button>';
         }
     };
 
