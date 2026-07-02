@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         GECO-O - Team - Sort by Alphabet
 // @namespace    http://tampermonkey.net/
-// @version      2.0.3
+// @version      2.1.0
 // @description  Adjusts the numbering of table rows by the first word of the last name before saving the form
 // @author       Roman Allenstein <r.allenstein@reply.de>
 // @match        https://geco.reply.com/GeCoO/Project/ManageTeam.aspx?*
@@ -10,6 +10,9 @@
 // @downloadURL  https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team-sort.user.js
 // @updateURL    https://github.com/vanilla-reply/geco-toolbox/raw/refs/heads/main/geco-o.team-sort.user.js
 // ==/UserScript==
+// == Changelog ========================================================================================================
+// 2.1.0    Sort active and inactive members separately (inactive always last), use locale-aware "de" comparison
+// 2.0.3    Previous release
 
 (function () {
   "use strict";
@@ -39,15 +42,21 @@
   const norm = s => (s || "").trim().split(/\s+/)[0]?.toUpperCase() || "";
 
   function adjustSortingByAlphabet() {
-    const rows = Array.from(document.querySelectorAll(".table__row")).slice(1);
-    const sorted = rows.slice().sort((a, b) => {
-      const nameA = norm(a.querySelector('span[id^="rptUsers_"][id$="_ltUserName"]')?.textContent);
-      const nameB = norm(b.querySelector('span[id^="rptUsers_"][id$="_ltUserName"]')?.textContent);
-      return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
-    });
-    sorted.forEach((row, i) => {
+    const rows = Array.from(document.querySelectorAll("#upResources > .table__row"))
+      .filter(row => !row.classList.contains("table__head"));
+    const getName = row =>
+      norm(row.querySelector('span[id^="rptUsers_"][id$="_ltUserName"]')?.textContent);
+    const activeRows = rows
+      .filter(row => !row.classList.contains("disactive"))
+      .sort((a, b) => getName(a).localeCompare(getName(b), "de"));
+    const inactiveRows = rows
+      .filter(row => row.classList.contains("disactive"))
+      .sort((a, b) => getName(a).localeCompare(getName(b), "de"));
+    [...activeRows, ...inactiveRows].forEach((row, i) => {
       const input = row.querySelector('input[id^="rptUsers_"][id$="_txtSorting"]');
-      if (input) input.value = i + 1;
+      if (input && !input.disabled) {
+        input.value = i + 1;
+      }
     });
   }
 
