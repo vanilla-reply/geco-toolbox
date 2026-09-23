@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Geco-T Booking Modal(2025)
 // @namespace    https://geco.reply.com/
-// @version      3.34
+// @version      3.35
 // @description  Tweaks for our precious Geco
 // @author       sku, fsf, dkr, pna, fro, dor, r.allenstein@reply.de, o.poglitsch@reply.de
 // @match        https://geco.reply.com/*
@@ -13,6 +13,8 @@
 // @grant        GM_setValue
 // @noframes
 // ==/UserScript==
+// == Changelog ========================================================================================================
+// 3.35         Fix width of ticket input box
 
 /*jshint multistr:true */
 
@@ -250,8 +252,8 @@ var GecoExtension = {
             .geco-fe-enabled .task-extension a.icon.paste { top: 11px; } \
             .geco-fe-enabled .editbox .editbox__field:nth-child(even) .task-extension { background-color: rgba(121,193,67,0.1); } \
             .geco-fe-enabled .editbox .editbox__field:nth-child(odd) .task-extension { background-color: rgba(121,193,67,0.2); } \
-            .geco-fe-enabled .task-extension input.inputbox.ticket { width: 70px !important; margin-right: 3px; margin-bottom: 5px; } \
-            .geco-fe-enabled .task-extension input.inputbox.package { width: 150px !important; margin-bottom: 5px; } \
+            .geco-fe-enabled .task-extension input.inputbox.ticket { width: 90px !important; margin-right: 3px; margin-bottom: 5px; } \
+            .geco-fe-enabled .task-extension input.inputbox.package { width: 130px !important; margin-bottom: 5px; } \
             .geco-fe-enabled .task-extension input.inputbox.hours { width: 30px !important; margin-right: 3px; margin-bottom: 5px; } \
             .geco-fe-enabled .task-extension input.inputbox.task { width: 280px !important; margin-right: 3px; margin-bottom: 5px; } \
             .geco-fe-enabled .task-extension input.inputbox.epicKey { background-color: #efefef; width: 60px !important; margin-right: 3px; margin-bottom: 5px; display: none; } \
